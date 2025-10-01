@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+    - name: Run tests
+      run: cargo test --verbose
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+    - name: Run clippy
+      run: cargo clippy -- -D warnings
+
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+  wordlist:
+    name: Verify wordlist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check wordlist exists
+      run: |
+        if [ ! -f assets/eff_large_wordlist.txt ]; then
+          echo "ERROR: Wordlist file not found"
+          exit 1
+        fi
+
+    - name: Verify wordlist size
+      run: |
+        LINES=$(wc -l < assets/eff_large_wordlist.txt)
+        if [ "$LINES" != "7776" ]; then
+          echo "ERROR: Wordlist must contain exactly 7776 lines, got $LINES"
+          exit 1
+        fi
+        echo "Wordlist contains $LINES lines"
+
+    - name: Verify wordlist checksum
+      run: |
+        EXPECTED="addd35536511597a02fa0a9ff1e5284677b8883b83e986e43f15a3db996b903e"
+        ACTUAL=$(sha256sum assets/eff_large_wordlist.txt | awk '{print $1}')
+
+        if [ "$EXPECTED" != "$ACTUAL" ]; then
+          echo "ERROR: Wordlist checksum mismatch"
+          echo "Expected: $EXPECTED"
+          echo "Actual:   $ACTUAL"
+          exit 1
+        fi
+
+        echo "Wordlist integrity verified"

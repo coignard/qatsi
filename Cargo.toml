@@ -1,0 +1,25 @@
+[package]
+name = "qatsi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+argon2 = { version = "0.5", features = ["std"] }
+chacha20 = "0.9"
+rpassword = "7.3"
+zeroize = { version = "1.8", features = ["derive"] }
+anyhow = "1.0"
+blake2 = "0.10"
+clap = { version = "4.5", features = ["derive"] }
+console = "0.15"
+indicatif = "0.17"
+
+[dev-dependencies]
+sha2 = "0.10"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+opt-level = 3
