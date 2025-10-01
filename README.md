@@ -40,7 +40,7 @@ Example usage:
 ```
 $ qatsi
 
-In [0]:
+In [0]: *************
 In [1]: github.com
 In [2]: October 2025
 In [3]:
