@@ -5,3 +5,4 @@
 *.yml text eol=lf
 .gitignore text eol=lf
 assets/eff_large_wordlist.txt binary
+assets/logo.svg binary
