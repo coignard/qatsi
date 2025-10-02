@@ -35,6 +35,16 @@ qatsi --mode password --security standard
 qatsi --mode password --security paranoid
 ```
 
+You can override the default security presets with custom parameters for fine-grained control:
+
+```bash
+# Generate a 12-word mnemonic with custom KDF memory (256 MiB)
+qatsi --mode mnemonic --words 12 --kdf-memory 256
+
+# Generate a 32-character password with custom KDF iterations
+qatsi --mode password --length 32 --kdf-iterations 24
+```
+
 Example usage:
 
 ```
@@ -46,24 +56,24 @@ In [2]: 2025
 In [3]:
 
 Out[0]:
-excusable-suffice-crepe-shower-amends-spoils-pebbly-specks
+possum-record-distinct-rekindle-fiftieth-unwanted-removal-security
 
 Settings:
   ├─ KDF        [✓] Argon2id (m=64 MiB, t=16, p=6)
-  ├─ Master     [✓] 23 character(s)
+  ├─ Master     [✓] 28 bytes (28 chars)
   ├─ Layers     [✓] 2 layers
-  │  ├─ [✓] In [1]: 10 character(s)
-  │  └─ [✓] In [2]: 4 character(s)
+  │  ├─ [✓] In [1]: 10 bytes (10 chars)
+  │  └─ [✓] In [2]: 4 bytes (4 chars)
   ├─ PRNG       ChaCha20 (256-bit)
   ├─ Sampling   Unbiased rejection
   └─ Output     8 words
 
 Stats:
   ├─ Entropy    [✓] 103.4 bits (Strong)
-  ├─ Length     [✓] 58 character(s)
-  ├─ Words      [✓] 8
+  ├─ Length     [✓] 61 chars
+  ├─ Words      [✓] 8 words
   ├─ Wordlist   EFF Large (7776 words)
-  └─ Time       1.0s
+  └─ Time       0.5s
 
 [✓] Security: Strong
 ```
@@ -78,8 +88,8 @@ $$K_i = \text{Argon2id}(K_{i-1}, \text{salt}(L_i), m, t, p, \ell) \quad \forall 
 
 **Configurations:**
 
-| Profile | Memory | Iterations | Parallelism | Time (M1) |
-|---------|--------|------------|-------------|-----------|
+| Profile | Memory | Iterations | Parallelism | Time (M1 Pro) |
+|---------|--------|------------|-------------|---------------|
 | Standard | 64 MiB | 16 | 6 threads | ~0.5s/layer |
 | Paranoid | 128 MiB | 32 | 6 threads | ~1.0s/layer |
 
@@ -88,28 +98,28 @@ $$K_i = \text{Argon2id}(K_{i-1}, \text{salt}(L_i), m, t, p, \ell) \quad \forall 
 - Mnemonic: $w \times \log_2(7776) \approx w \times 12.925$ bits, where $w \in \{8, 24\}$
 - Password: $\ell \times \log_2(90) \approx \ell \times 6.492$ bits, where $\ell \in \{20, 48\}$
 
-Final key $K_n$ seeds ChaCha20 for unbiased rejection sampling:
+The final key $K_n$ seeds a ChaCha20 stream cipher for unbiased rejection sampling:
 
-- Mnemonic: Reject if $r \geq 62208$ (ensures uniform selection from 7776 words)
-- Password: Reject if $b \geq 180$ (ensures uniform selection from 90-character alphabet)
+- Mnemonic: Reject if random $u16 \geq 65535 - (65535 \pmod{7776})$ (ensures uniform selection from 7776 words)
+- Password: Reject if random byte $\geq 256 - (256 \pmod{90})$ (ensures uniform selection from 90-character alphabet)
 
 ## Security
 
-**Argon2id parameters** resist GPU/ASIC attacks through memory-hardness:
+**Argon2id parameters** are chosen to resist GPU/ASIC attacks through memory-hardness:
 
 - Standard: 64 MiB memory, 16 iterations, 6-thread parallelism
 - Paranoid: 128 MiB memory, 32 iterations, 6-thread parallelism
 
-**Attack resistance:** For 80-bit master secret with paranoid mode, expected brute-force time exceeds $3.8 \times 10^8$ years at 50,000 H/s (500 GPUs @ 100 H/s each).
+**Attack resistance:** For an 80-bit master secret with the paranoid preset, the expected brute-force time exceeds $3.8 \times 10^8$ years on a cluster of 500 high-end GPUs, each attempting 100 hashes per second.
 
 **Cryptographic properties:**
 
-- EFF Large Wordlist (7776 words) embedded with compile-time SHA-256 verification
+- Automatic memory zeroization via `Zeroizing<T>` for all sensitive data (master secret, layers, salts, derived keys, and generated output).
+- EFF Large Wordlist (7776 words) embedded with compile-time SHA-256 integrity verification
 - ChaCha20 CSPRNG (256-bit security)
-- Unbiased rejection sampling (provably uniform distribution)
-- Automatic memory zeroization via `Zeroizing<T>`
+- Unbiased rejection sampling for provably uniform character and word distribution
 
-**Threat model:** Protects against offline brute-force, dictionary attacks, GPU acceleration, supply-chain attacks (wordlist tampering), and memory disclosure. Does not provide forward secrecy (master compromise exposes all derivations).
+**Threat model:** Protects against offline brute-force attacks, dictionary attacks, GPU/ASIC acceleration, supply-chain attacks (wordlist tampering), and memory disclosure on the host system. It does not provide forward secrecy (a compromised master secret exposes all derived passphrases).
 
 ## Test
 
