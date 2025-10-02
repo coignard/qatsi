@@ -1,4 +1,4 @@
-# Qatsi
+<img src="https://github.com/coignard/qatsi/blob/main/assets/logo.svg?raw=true" alt="Qatsi Logo" height="72">
 
 [![CI](https://github.com/coignard/qatsi/actions/workflows/ci.yml/badge.svg)](https://github.com/coignard/qatsi/actions/workflows/ci.yml)
 
