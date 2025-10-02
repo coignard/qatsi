@@ -71,7 +71,10 @@ mod tests {
 
         /* out of */
 
-        assert_eq!(words[469], "balance", "Word at line 470 should be \"balance\"");
+        assert_eq!(
+            words[469], "balance",
+            "Word at line 470 should be \"balance\""
+        );
 
         for (i, word) in words.iter().enumerate() {
             assert!(
