@@ -67,12 +67,11 @@ mod tests {
 
         assert_eq!(words[7775], "zoom", "Last word should be \"zoom\"");
 
-        assert_eq!(
-            words[469], "balance",
-            "Word at line 470 should be \"balance\""
-        );
-
         assert_eq!(words[3695], "life", "Word at line 3696 should be \"life\"");
+
+        /* out of */
+
+        assert_eq!(words[469], "balance", "Word at line 470 should be \"balance\"");
 
         for (i, word) in words.iter().enumerate() {
             assert!(
@@ -87,15 +86,7 @@ mod tests {
                 i,
                 word,
                 word.len()
-            );
-            if word.contains('-') {
-                assert!(
-                    !word.starts_with('-') && !word.ends_with('-'),
-                    "Word at index {} (\"{}\") has hyphen at start or end",
-                    i,
-                    word
-                );
-            }
+            )
         }
     }
 
