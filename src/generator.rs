@@ -2,11 +2,12 @@ use crate::wordlist::{get_wordlist, wordlist_size};
 use anyhow::Result;
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20::ChaCha20;
+use zeroize::Zeroizing;
 
 const ALPHABET: &[u8] =
     b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/~";
 
-pub fn generate_mnemonic(key: &[u8; 32], word_count: usize) -> Result<String> {
+pub fn generate_mnemonic(key: &[u8; 32], word_count: usize) -> Result<Zeroizing<String>> {
     let wordlist = get_wordlist();
     let wordlist_len = wordlist_size();
 
@@ -16,7 +17,7 @@ pub fn generate_mnemonic(key: &[u8; 32], word_count: usize) -> Result<String> {
     let max_multiple = 65536 / wordlist_len as u32;
     let rejection_threshold = (max_multiple * wordlist_len as u32) as u16;
 
-    let mut buffer = vec![0u8; 2048];
+    let mut buffer = Zeroizing::new(vec![0u8; 2048]);
     cipher.apply_keystream(&mut buffer);
     let mut pos = 0;
 
@@ -35,21 +36,22 @@ pub fn generate_mnemonic(key: &[u8; 32], word_count: usize) -> Result<String> {
         }
     }
 
-    Ok(words.join("-"))
+    Ok(Zeroizing::new(words.join("-")))
 }
 
-pub fn generate_password(key: &[u8; 32], password_length: usize) -> Result<String> {
+pub fn generate_password(key: &[u8; 32], password_length: usize) -> Result<Zeroizing<String>> {
     let mut cipher = ChaCha20::new(key.into(), &[0u8; 12].into());
-    let mut password = Vec::with_capacity(password_length);
+
+    let mut password_bytes = Zeroizing::new(Vec::with_capacity(password_length));
 
     let alphabet_size = ALPHABET.len();
     let rejection_threshold = 256 - (256 % alphabet_size);
 
-    let mut buffer = vec![0u8; 1024];
+    let mut buffer = Zeroizing::new(vec![0u8; 1024]);
     cipher.apply_keystream(&mut buffer);
     let mut pos = 0;
 
-    while password.len() < password_length {
+    while password_bytes.len() < password_length {
         if pos >= buffer.len() {
             cipher.apply_keystream(&mut buffer);
             pos = 0;
@@ -60,16 +62,22 @@ pub fn generate_password(key: &[u8; 32], password_length: usize) -> Result<Strin
 
         if (random_byte as usize) < rejection_threshold {
             let index = (random_byte as usize) % alphabet_size;
-            password.push(ALPHABET[index]);
+            password_bytes.push(ALPHABET[index]);
         }
     }
 
-    Ok(String::from_utf8(password)?)
+    let result = String::from_utf8(password_bytes.to_vec())?;
+
+    Ok(Zeroizing::new(result))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn to_zeroizing_vec(v: Vec<String>) -> Vec<Zeroizing<String>> {
+        v.into_iter().map(Zeroizing::new).collect()
+    }
 
     #[test]
     fn test_alphabet_size() {
@@ -92,7 +100,7 @@ mod tests {
         let key = [42u8; 32];
         let mnemonic1 = generate_mnemonic(&key, 24).unwrap();
         let mnemonic2 = generate_mnemonic(&key, 24).unwrap();
-        assert_eq!(mnemonic1, mnemonic2);
+        assert_eq!(*mnemonic1, *mnemonic2);
     }
 
     #[test]
@@ -108,7 +116,7 @@ mod tests {
         let key = [42u8; 32];
         let password1 = generate_password(&key, 20).unwrap();
         let password2 = generate_password(&key, 20).unwrap();
-        assert_eq!(password1, password2);
+        assert_eq!(*password1, *password2);
     }
 
     #[test]
@@ -126,7 +134,7 @@ mod tests {
         for ch in password.bytes() {
             assert!(
                 ALPHABET.contains(&ch),
-                "Password contains invalid character: '{}' (byte {})",
+                "Password contains invalid character: \"{}\" (byte {})",
                 ch as char,
                 ch
             );
@@ -155,5 +163,86 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_regression_mnemonic_standard() {
+        let master = b"life";
+        let layers = to_zeroizing_vec(vec![
+            "out".to_string(),
+            "of".to_string(),
+            "balance".to_string(),
+        ]);
+
+        let key =
+            crate::kdf::derive_hierarchical(master, &layers, crate::kdf::Argon2Config::STANDARD)
+                .unwrap();
+
+        let mnemonic = generate_mnemonic(&key, 8).unwrap();
+
+        assert_eq!(
+            *mnemonic,
+            "eagle-huskiness-septum-defection-splatter-version-important-stumble"
+        );
+    }
+
+    #[test]
+    fn test_regression_mnemonic_paranoid() {
+        let master = b"life";
+        let layers = to_zeroizing_vec(vec![
+            "out".to_string(),
+            "of".to_string(),
+            "balance".to_string(),
+        ]);
+
+        let key =
+            crate::kdf::derive_hierarchical(master, &layers, crate::kdf::Argon2Config::PARANOID)
+                .unwrap();
+
+        let mnemonic = generate_mnemonic(&key, 24).unwrap();
+
+        assert_eq!(
+            *mnemonic,
+            "vigorous-purebred-exclusion-deface-champion-anatomist-jubilance-snowcap-palace-bankbook-basis-overcast-stunner-augmented-viability-ascension-polygon-spinning-trolling-arson-sagging-line-fraction-rely"
+        );
+    }
+
+    #[test]
+    fn test_regression_password_standard() {
+        let master = b"life";
+        let layers = to_zeroizing_vec(vec![
+            "out".to_string(),
+            "of".to_string(),
+            "balance".to_string(),
+        ]);
+
+        let key =
+            crate::kdf::derive_hierarchical(master, &layers, crate::kdf::Argon2Config::STANDARD)
+                .unwrap();
+
+        let password = generate_password(&key, 20).unwrap();
+
+        assert_eq!(*password, "6n=rX.k:Qs+)6e5oa-Z:");
+    }
+
+    #[test]
+    fn test_regression_password_paranoid() {
+        let master = b"life";
+        let layers = to_zeroizing_vec(vec![
+            "out".to_string(),
+            "of".to_string(),
+            "balance".to_string(),
+        ]);
+
+        let key =
+            crate::kdf::derive_hierarchical(master, &layers, crate::kdf::Argon2Config::PARANOID)
+                .unwrap();
+
+        let password = generate_password(&key, 48).unwrap();
+
+        assert_eq!(
+            *password,
+            "kex9)5&&$>,N<4}@mDawmgyn<hY_5e@WsvKQsUD*ut9EN^&D"
+        );
     }
 }
