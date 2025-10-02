@@ -11,7 +11,7 @@ use clap::{Parser, ValueEnum};
     name = "qatsi",
     version,
     author,
-    about = "Hierarchical passphrase generator using Argon2id"
+    about = "Hierarchical deterministic passphrase generator using Argon2id"
 )]
 struct Cli {
     #[arg(short, long, value_enum, default_value = "mnemonic")]

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/coignard/qatsi/actions/workflows/ci.yml/badge.svg)](https://github.com/coignard/qatsi/actions/workflows/ci.yml)
 
-Deterministic passphrase generator using hierarchical Argon2id key derivation. Generates cryptographically secure mnemonic or alphanumeric passphrases without storing anything to disk.
+Hierarchical deterministic passphrase generator using hierarchical Argon2id key derivation. Generates cryptographically secure mnemonic or alphanumeric passphrases without storing anything to disk.
 
 Designed for master passwords and other high-entropy secrets that need to be reproduced on-demand from a master secret and context layers.
 
@@ -44,7 +44,7 @@ $ qatsi
 
 In [0]: *************
 In [1]: github.com
-In [2]: October 2025
+In [2]: 2025
 In [3]:
 
 Out[0]:
