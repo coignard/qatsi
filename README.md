@@ -82,9 +82,11 @@ Stats:
 
 The core of `qatsi` is a hierarchical key derivation process. The following diagram illustrates the flow from user input to the final generated output:
 
-<br><div align="center" style="padding-top: 10px; padding-bottom: 10px;">
+<br>
+<div align="center">
   <img src="https://github.com/coignard/qatsi/blob/main/docs/diagram.png?raw=true" alt="Qatsi Algo Flow" width="512">
-</div><br>
+</div>
+</br>
 
 Given master secret $M$ and context layers $L_1, \ldots, L_n$, hierarchical key derivation:
 
