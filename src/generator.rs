@@ -17,7 +17,7 @@ pub fn generate_mnemonic(key: &[u8; 32], word_count: usize) -> Result<Zeroizing<
     let max_multiple = 65536 / wordlist_len as u32;
     let rejection_threshold = (max_multiple * wordlist_len as u32) as u16;
 
-    let mut buffer = Zeroizing::new(vec![0u8; 2048]);
+    let mut buffer = Zeroizing::new(vec![0u8; 512]);
     cipher.apply_keystream(&mut buffer);
     let mut pos = 0;
 

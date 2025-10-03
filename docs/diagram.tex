@@ -1,0 +1,95 @@
+\documentclass[border=10pt]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+
+\begin{document}
+
+\tikzset{
+    block/.style={rectangle, draw=black, thick, minimum width=3cm, minimum height=0.8cm, text centered, font=\small},
+    input/.style={block, fill=blue!10},
+    kdf/.style={block, fill=red!15},
+    key/.style={block, fill=green!15},
+    cipher/.style={block, fill=cyan!15},
+    output/.style={block, fill=yellow!15, rounded corners=3pt},
+    decision/.style={diamond, draw=black, thick, minimum width=2.5cm, minimum height=1cm, text centered, font=\scriptsize, aspect=2},
+    process/.style={block, fill=orange!10},
+    arrow/.style={->, >=stealth, thick},
+}
+
+\begin{tikzpicture}[node distance=1cm, auto]
+
+\node[input] (master_secret) at (-4, -1) {$M$};
+\node[input] (layer_1) at (0, -1) {$L_1$};
+
+\node[kdf, below=1cm of $(master_secret.south)!0.5!(layer_1.south)$] (kdf_1) {Argon2id};
+\draw[arrow] (master_secret) -- (kdf_1);
+\draw[arrow] (layer_1) -- (kdf_1);
+
+\node[key, below=1cm of kdf_1] (key_1) {$K_1$};
+\node[input, right=0.5cm of key_1] (layer_2) {$L_2$};
+\draw[arrow] (kdf_1) -- (key_1);
+
+\node[kdf, below=1cm of $(key_1.south)!0.5!(layer_2.south)$] (kdf_2) {Argon2id};
+\draw[arrow] (key_1) -- (kdf_2);
+\draw[arrow] (layer_2) -- (kdf_2);
+
+\node[key, below=1cm of kdf_2] (key_2) {$K_2$};
+\draw[arrow] (kdf_2) -- (key_2);
+
+\node (vertical_dots) [below=0.3cm of key_2, font=\Large] {$\vdots$};
+\draw[arrow] (key_2) -- (vertical_dots);
+
+\node[kdf, below=1.2cm of vertical_dots] (kdf_n) {Argon2id};
+\node[input, right=1cm of kdf_n] (layer_n) {$L_n$};
+\draw[arrow] (vertical_dots) -- (kdf_n);
+\draw[arrow] (layer_n) -- (kdf_n);
+
+\node[key, below=1cm of kdf_n] (final_key) {$K_n$};
+\draw[arrow] (kdf_n) -- (final_key);
+
+\node[cipher, below=1cm of final_key] (prng_chacha) {ChaCha20};
+\draw[arrow] (final_key) -- (prng_chacha);
+
+\coordinate (prng_output_split) at (-0.25, -16.5);
+\draw[arrow] (prng_chacha) -- (prng_output_split);
+\draw[arrow] (prng_output_split) -| (-4.5, -17.5);
+\draw[arrow] (prng_output_split) -| (4.5, -17.5);
+
+\node[process, below=0.5cm of {(-4.5, -17)}] (sample_mnemonic_random) {Sample 16-bit $r$};
+
+\node[decision, below=1cm of sample_mnemonic_random] (check_mnemonic_rejection) {$r < 62208$?};
+\draw[arrow] (sample_mnemonic_random) -- (check_mnemonic_rejection);
+
+\node[process, below=0.75cm of check_mnemonic_rejection] (select_mnemonic_word) {$w = \mathcal{W}[r \bmod 7776]$};
+\draw[arrow] (check_mnemonic_rejection) -- node[right, font=\tiny] {yes} (select_mnemonic_word);
+\draw[arrow] (check_mnemonic_rejection.east) -- ++(0.8,0) |- node[near start, right, font=\tiny] {no} (sample_mnemonic_random.east);
+
+\node[decision, below=1cm of select_mnemonic_word] (check_mnemonic_word_count) {$N$ words?};
+\draw[arrow] (select_mnemonic_word) -- (check_mnemonic_word_count);
+\draw[arrow] (check_mnemonic_word_count.west) -- ++(-0.8,0) |- node[near start, left, font=\tiny] {no} (sample_mnemonic_random.west);
+
+\node[output, below=1cm of check_mnemonic_word_count] (output_mnemonic) {Mnemonic};
+\draw[arrow] (check_mnemonic_word_count) -- node[right, font=\tiny] {yes} (output_mnemonic);
+
+\node[process, below=0.5cm of {(4.5, -17}] (sample_password_random) {Sample 8-bit $b$};
+
+\node[decision, below=1cm of sample_password_random] (check_password_rejection) {$b < 180$?};
+\draw[arrow] (sample_password_random) -- (check_password_rejection);
+
+\node[process, below=1cm of check_password_rejection] (select_password_char) {$c = \mathcal{A}[b \bmod 90]$};
+\draw[arrow] (check_password_rejection) -- node[right, font=\tiny] {yes} (select_password_char);
+\draw[arrow] (check_password_rejection.east) -- ++(0.8,0) |- node[near start, right, font=\tiny] {no} (sample_password_random.east);
+
+\node[decision, below=1cm of select_password_char] (check_password_char_count) {$\ell$ chars?};
+\draw[arrow] (select_password_char) -- (check_password_char_count);
+\draw[arrow] (check_password_char_count.west) -- ++(-0.8,0) |- node[near start, left, font=\tiny] {no} (sample_password_random.west);
+
+\node[output, below=1cm of check_password_char_count] (output_password) {Password};
+\draw[arrow] (check_password_char_count) -- node[right, font=\tiny] {yes} (output_password);
+
+\end{tikzpicture}
+
+\end{document}

@@ -6,12 +6,22 @@ mod wordlist;
 use anyhow::Result;
 use clap::{Parser, ValueEnum};
 
+const LOGO: &str = "\x1b[38;2;192;0;1m\
+⣴⣿⠿⣿⣦⠀⣴⣿⠿⣿⣦⢸⣿⣿⣿⡇⣴⣿⠿⣿⣦⠀⣿⣿\n\
+⣿⣿⠀⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⣿⣿⠀⠿⠿⠀⣿⣿\n\
+⣿⣿⠀⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⣿⣿⣤⣤⠀⠀⣿⣿\n\
+⣿⣿⠀⣿⣿⠀⣿⣿⣀⣿⣿⠀⢸⣿⡇⠀⠈⠛⠛⣿⣿⠀⣿⣿\n\
+⣿⣿⠀⣿⣿⠀⣿⣿⠉⣿⣿⠀⢸⣿⡇⠀⣶⣶⠀⣿⣿⠀⣿⣿\n\
+⣿⣿⣤⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⢿⣿⣤⣿⣿⠀⣿⣿\n\
+⠈⠛⠛⠛⢿⠀⠛⠛⠀⠛⠛⠀⠘⠛⠃⠀⠀⠙⠛⠛⠁⠀⠛⠛\x1b[0m";
+
 #[derive(Parser)]
 #[command(
     name = "qatsi",
     version,
     author,
-    about = "Hierarchical deterministic passphrase generator using Argon2id"
+    about = "Hierarchical deterministic passphrase generator using Argon2id",
+    before_help = LOGO
 )]
 struct Cli {
     #[arg(
@@ -65,16 +75,9 @@ enum SecurityLevel {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let (master_secret, master_byte_length, master_char_count) = ui::prompt_master_secret()
-        .map_err(|e| {
-            eprintln!("Error reading master secret: {}", e);
-            e
-        })?;
+    let (master_secret, master_byte_length, master_char_count) = ui::prompt_master_secret()?;
 
-    let (layers, layer_infos) = ui::prompt_layers().map_err(|e| {
-        eprintln!("Error reading layers: {}", e);
-        e
-    })?;
+    let (layers, layer_infos) = ui::prompt_layers()?;
 
     let input_info = ui::InputInfo {
         master_byte_length,
