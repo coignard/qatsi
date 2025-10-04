@@ -92,9 +92,14 @@ fn derive_single(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use unicode_normalization::UnicodeNormalization;
 
     fn to_zeroizing_vec(v: Vec<String>) -> Vec<Zeroizing<String>> {
         v.into_iter().map(Zeroizing::new).collect()
+    }
+
+    fn normalize_string(s: &str) -> String {
+        s.trim().nfc().collect()
     }
 
     #[test]
@@ -191,18 +196,98 @@ mod tests {
     }
 
     #[test]
-    fn test_unicode_normalization_sensitivity() {
+    fn test_unicode_normalization_nfc_nfd() {
         let master = b"test_master_secret";
 
-        let nfc = to_zeroizing_vec(vec!["café".to_string()]);
-        let nfd = to_zeroizing_vec(vec!["cafe\u{0301}".to_string()]);
+        let nfc = normalize_string("café");
+        let nfd = normalize_string("cafe\u{0301}");
 
-        let key_nfc = derive_hierarchical(master, &nfc, Argon2Config::STANDARD).unwrap();
-        let key_nfd = derive_hierarchical(master, &nfd, Argon2Config::STANDARD).unwrap();
+        assert_eq!(nfc, nfd);
+        assert_eq!(nfc.as_bytes(), nfd.as_bytes());
 
-        println!("NFC bytes: {:?}", nfc[0].as_bytes());
-        println!("NFD bytes: {:?}", nfd[0].as_bytes());
-        println!("Keys equal: {}", key_nfc.as_ref() == key_nfd.as_ref());
+        let layers_nfc = to_zeroizing_vec(vec![nfc]);
+        let layers_nfd = to_zeroizing_vec(vec![nfd]);
+
+        let key_nfc = derive_hierarchical(master, &layers_nfc, Argon2Config::STANDARD).unwrap();
+        let key_nfd = derive_hierarchical(master, &layers_nfd, Argon2Config::STANDARD).unwrap();
+
+        assert_eq!(key_nfc.as_ref(), key_nfd.as_ref());
+    }
+
+    #[test]
+    fn test_unicode_normalization_multiple_forms() {
+        let master = b"test";
+
+        let test_cases = vec![
+            ("café", "cafe\u{0301}"),
+            ("Å", "A\u{030A}"),
+            ("ñ", "n\u{0303}"),
+            ("ö", "o\u{0308}"),
+        ];
+
+        for (nfc, nfd) in test_cases {
+            let normalized_nfc = normalize_string(nfc);
+            let normalized_nfd = normalize_string(nfd);
+
+            assert_eq!(normalized_nfc, normalized_nfd, "NFC and NFD should normalize to same form");
+
+            let layers_nfc = to_zeroizing_vec(vec![normalized_nfc.clone()]);
+            let layers_nfd = to_zeroizing_vec(vec![normalized_nfd.clone()]);
+
+            let key_nfc = derive_hierarchical(master, &layers_nfc, Argon2Config::STANDARD).unwrap();
+            let key_nfd = derive_hierarchical(master, &layers_nfd, Argon2Config::STANDARD).unwrap();
+
+            assert_eq!(key_nfc.as_ref(), key_nfd.as_ref(),
+                "Keys should be identical for {} and its NFD form", nfc);
+        }
+    }
+
+    #[test]
+    fn test_whitespace_trimming() {
+        let master = b"test";
+
+        let test_cases = vec![
+            ("password", "  password  "),
+            ("password", "\tpassword\t"),
+            ("password", "\npassword\n"),
+            ("password", " \t password \n "),
+        ];
+
+        for (expected, input) in test_cases {
+            let normalized = normalize_string(input);
+            assert_eq!(normalized, expected);
+
+            let layers_trimmed = to_zeroizing_vec(vec![normalize_string(expected)]);
+            let layers_untrimmed = to_zeroizing_vec(vec![normalize_string(input)]);
+
+            let key_trimmed = derive_hierarchical(master, &layers_trimmed, Argon2Config::STANDARD).unwrap();
+            let key_untrimmed = derive_hierarchical(master, &layers_untrimmed, Argon2Config::STANDARD).unwrap();
+
+            assert_eq!(key_trimmed.as_ref(), key_untrimmed.as_ref());
+        }
+    }
+
+    #[test]
+    fn test_normalization_and_trim_combined() {
+        let master = b"test";
+
+        let input1 = "  café  ";
+        let input2 = "\tcafe\u{0301}\n";
+
+        let normalized1 = normalize_string(input1);
+        let normalized2 = normalize_string(input2);
+
+        assert_eq!(normalized1, "café");
+        assert_eq!(normalized2, "café");
+        assert_eq!(normalized1, normalized2);
+
+        let layers1 = to_zeroizing_vec(vec![normalized1]);
+        let layers2 = to_zeroizing_vec(vec![normalized2]);
+
+        let key1 = derive_hierarchical(master, &layers1, Argon2Config::STANDARD).unwrap();
+        let key2 = derive_hierarchical(master, &layers2, Argon2Config::STANDARD).unwrap();
+
+        assert_eq!(key1.as_ref(), key2.as_ref());
     }
 
     #[test]
@@ -231,9 +316,10 @@ mod tests {
 
     #[test]
     fn test_unicode_mixed_layers() {
-        let master = "мастер🔑".as_bytes();
+        let master = "секрет🔑".as_bytes();
         let layers = to_zeroizing_vec(vec![
             "жизнь".to_string(),
+            "ცხოვრება".to_string(),
             "生活".to_string(),
             "생활".to_string(),
             "🌍🌎🌏".to_string(),
@@ -285,5 +371,35 @@ mod tests {
         assert_eq!(entropy_ascii, 40.0);
         assert_eq!(entropy_cyrillic, 96.0);
         assert_eq!(entropy_emoji, 64.0);
+    }
+
+    #[test]
+    fn test_normalization_with_hierarchical_layers() {
+        let master_nfc = normalize_string("café");
+        let master_nfd = normalize_string("cafe\u{0301}");
+
+        assert_eq!(master_nfc, master_nfd);
+
+        let layers = to_zeroizing_vec(vec![
+            normalize_string("René"),
+            normalize_string("\tDessau-Roßlau\t"),
+            normalize_string("Gräfenhainichen"),
+        ]);
+
+        let key1 = derive_hierarchical(master_nfc.as_bytes(), &layers, Argon2Config::STANDARD).unwrap();
+        let key2 = derive_hierarchical(master_nfd.as_bytes(), &layers, Argon2Config::STANDARD).unwrap();
+
+        assert_eq!(key1.as_ref(), key2.as_ref());
+    }
+
+    #[test]
+    fn test_normalization_idempotent() {
+        let input = "café\u{0301}";
+
+        let first = normalize_string(input);
+        let second = normalize_string(&first);
+
+        assert_eq!(first, second);
+        assert_eq!(first.as_bytes(), second.as_bytes());
     }
 }

@@ -30,7 +30,6 @@ Qatsi's security relies on:
 
 ### Known Limitations
 
-- **Not quantum-resistant**: Uses classical cryptography
 - **Side-channel attacks**: No specific mitigations (constant-time operations not guaranteed)
 - **Terminal history**: Master secret may appear in shell history if piped
 
