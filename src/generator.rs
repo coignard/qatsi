@@ -255,16 +255,22 @@ mod tests {
     fn test_normalization_produces_same_output() {
         let master = b"test";
 
-        let nfc_layers = to_zeroizing_vec(vec![
-            normalize_string("café"),
-        ]);
+        let nfc_layers = to_zeroizing_vec(vec![normalize_string("café")]);
 
-        let nfd_layers = to_zeroizing_vec(vec![
-            normalize_string("cafe\u{0301}"),
-        ]);
+        let nfd_layers = to_zeroizing_vec(vec![normalize_string("cafe\u{0301}")]);
 
-        let key_nfc = crate::kdf::derive_hierarchical(master, &nfc_layers, crate::kdf::Argon2Config::STANDARD).unwrap();
-        let key_nfd = crate::kdf::derive_hierarchical(master, &nfd_layers, crate::kdf::Argon2Config::STANDARD).unwrap();
+        let key_nfc = crate::kdf::derive_hierarchical(
+            master,
+            &nfc_layers,
+            crate::kdf::Argon2Config::STANDARD,
+        )
+        .unwrap();
+        let key_nfd = crate::kdf::derive_hierarchical(
+            master,
+            &nfd_layers,
+            crate::kdf::Argon2Config::STANDARD,
+        )
+        .unwrap();
 
         assert_eq!(key_nfc.as_ref(), key_nfd.as_ref());
 
@@ -281,16 +287,22 @@ mod tests {
     fn test_whitespace_trim_produces_same_output() {
         let master = b"test";
 
-        let trimmed_layers = to_zeroizing_vec(vec![
-            normalize_string("password"),
-        ]);
+        let trimmed_layers = to_zeroizing_vec(vec![normalize_string("password")]);
 
-        let untrimmed_layers = to_zeroizing_vec(vec![
-            normalize_string("  password  "),
-        ]);
+        let untrimmed_layers = to_zeroizing_vec(vec![normalize_string("  password  ")]);
 
-        let key_trimmed = crate::kdf::derive_hierarchical(master, &trimmed_layers, crate::kdf::Argon2Config::STANDARD).unwrap();
-        let key_untrimmed = crate::kdf::derive_hierarchical(master, &untrimmed_layers, crate::kdf::Argon2Config::STANDARD).unwrap();
+        let key_trimmed = crate::kdf::derive_hierarchical(
+            master,
+            &trimmed_layers,
+            crate::kdf::Argon2Config::STANDARD,
+        )
+        .unwrap();
+        let key_untrimmed = crate::kdf::derive_hierarchical(
+            master,
+            &untrimmed_layers,
+            crate::kdf::Argon2Config::STANDARD,
+        )
+        .unwrap();
 
         assert_eq!(key_trimmed.as_ref(), key_untrimmed.as_ref());
 
@@ -307,16 +319,22 @@ mod tests {
     fn test_combined_normalization_and_trim() {
         let master = b"test";
 
-        let clean_layers = to_zeroizing_vec(vec![
-            normalize_string("café"),
-        ]);
+        let clean_layers = to_zeroizing_vec(vec![normalize_string("café")]);
 
-        let messy_layers = to_zeroizing_vec(vec![
-            normalize_string("  cafe\u{0301}\t\n"),
-        ]);
+        let messy_layers = to_zeroizing_vec(vec![normalize_string("  cafe\u{0301}\t\n")]);
 
-        let key_clean = crate::kdf::derive_hierarchical(master, &clean_layers, crate::kdf::Argon2Config::STANDARD).unwrap();
-        let key_messy = crate::kdf::derive_hierarchical(master, &messy_layers, crate::kdf::Argon2Config::STANDARD).unwrap();
+        let key_clean = crate::kdf::derive_hierarchical(
+            master,
+            &clean_layers,
+            crate::kdf::Argon2Config::STANDARD,
+        )
+        .unwrap();
+        let key_messy = crate::kdf::derive_hierarchical(
+            master,
+            &messy_layers,
+            crate::kdf::Argon2Config::STANDARD,
+        )
+        .unwrap();
 
         assert_eq!(key_clean.as_ref(), key_messy.as_ref());
 
@@ -343,11 +361,25 @@ mod tests {
             let layers_nfc = to_zeroizing_vec(vec![normalize_string(nfc)]);
             let layers_nfd = to_zeroizing_vec(vec![normalize_string(nfd)]);
 
-            let key_nfc = crate::kdf::derive_hierarchical(master, &layers_nfc, crate::kdf::Argon2Config::STANDARD).unwrap();
-            let key_nfd = crate::kdf::derive_hierarchical(master, &layers_nfd, crate::kdf::Argon2Config::STANDARD).unwrap();
+            let key_nfc = crate::kdf::derive_hierarchical(
+                master,
+                &layers_nfc,
+                crate::kdf::Argon2Config::STANDARD,
+            )
+            .unwrap();
+            let key_nfd = crate::kdf::derive_hierarchical(
+                master,
+                &layers_nfd,
+                crate::kdf::Argon2Config::STANDARD,
+            )
+            .unwrap();
 
-            assert_eq!(key_nfc.as_ref(), key_nfd.as_ref(),
-                "Keys should match for {} and its NFD form", nfc);
+            assert_eq!(
+                key_nfc.as_ref(),
+                key_nfd.as_ref(),
+                "Keys should match for {} and its NFD form",
+                nfc
+            );
 
             let mnemonic_nfc = generate_mnemonic(&key_nfc, 6).unwrap();
             let mnemonic_nfd = generate_mnemonic(&key_nfd, 6).unwrap();

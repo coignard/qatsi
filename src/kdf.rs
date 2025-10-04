@@ -229,7 +229,10 @@ mod tests {
             let normalized_nfc = normalize_string(nfc);
             let normalized_nfd = normalize_string(nfd);
 
-            assert_eq!(normalized_nfc, normalized_nfd, "NFC and NFD should normalize to same form");
+            assert_eq!(
+                normalized_nfc, normalized_nfd,
+                "NFC and NFD should normalize to same form"
+            );
 
             let layers_nfc = to_zeroizing_vec(vec![normalized_nfc.clone()]);
             let layers_nfd = to_zeroizing_vec(vec![normalized_nfd.clone()]);
@@ -237,8 +240,12 @@ mod tests {
             let key_nfc = derive_hierarchical(master, &layers_nfc, Argon2Config::STANDARD).unwrap();
             let key_nfd = derive_hierarchical(master, &layers_nfd, Argon2Config::STANDARD).unwrap();
 
-            assert_eq!(key_nfc.as_ref(), key_nfd.as_ref(),
-                "Keys should be identical for {} and its NFD form", nfc);
+            assert_eq!(
+                key_nfc.as_ref(),
+                key_nfd.as_ref(),
+                "Keys should be identical for {} and its NFD form",
+                nfc
+            );
         }
     }
 
@@ -260,8 +267,10 @@ mod tests {
             let layers_trimmed = to_zeroizing_vec(vec![normalize_string(expected)]);
             let layers_untrimmed = to_zeroizing_vec(vec![normalize_string(input)]);
 
-            let key_trimmed = derive_hierarchical(master, &layers_trimmed, Argon2Config::STANDARD).unwrap();
-            let key_untrimmed = derive_hierarchical(master, &layers_untrimmed, Argon2Config::STANDARD).unwrap();
+            let key_trimmed =
+                derive_hierarchical(master, &layers_trimmed, Argon2Config::STANDARD).unwrap();
+            let key_untrimmed =
+                derive_hierarchical(master, &layers_untrimmed, Argon2Config::STANDARD).unwrap();
 
             assert_eq!(key_trimmed.as_ref(), key_untrimmed.as_ref());
         }
@@ -386,8 +395,10 @@ mod tests {
             normalize_string("Gräfenhainichen"),
         ]);
 
-        let key1 = derive_hierarchical(master_nfc.as_bytes(), &layers, Argon2Config::STANDARD).unwrap();
-        let key2 = derive_hierarchical(master_nfd.as_bytes(), &layers, Argon2Config::STANDARD).unwrap();
+        let key1 =
+            derive_hierarchical(master_nfc.as_bytes(), &layers, Argon2Config::STANDARD).unwrap();
+        let key2 =
+            derive_hierarchical(master_nfd.as_bytes(), &layers, Argon2Config::STANDARD).unwrap();
 
         assert_eq!(key1.as_ref(), key2.as_ref());
     }

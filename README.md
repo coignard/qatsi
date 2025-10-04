@@ -2,7 +2,9 @@
 
 Deterministic passphrase generator with layered Argon2id key derivation. Generates cryptographically secure mnemonic or alphanumeric passphrases without storing anything to disk.
 
-Designed for master passwords and other high-entropy secrets that need to be reproduced on-demand from a master secret and context layers.
+**Disclaimer:** Qatsi is not a password manager. It's a deterministic secret generator designed for high-entropy master passwords (e.g., KeePassXC database keys), disk encryption passphrases, PGP key passwords, and other secrets that need to be reproduced on-demand without storage.
+
+For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi in contexts where you need reproducible secrets across air-gapped systems. See [SECURITY.md](SECURITY.md) for detailed threat model.
 
 ## Install
 
@@ -128,6 +130,20 @@ The final key $K_n$ seeds a ChaCha20 stream cipher for unbiased rejection sampli
 - Unbiased rejection sampling for provably uniform character and word distribution
 
 **Threat model:** Protects against offline brute-force attacks, dictionary attacks, GPU/ASIC acceleration, supply-chain attacks (wordlist tampering), and memory disclosure on the host system. It does not provide forward secrecy (a compromised master secret exposes all derived passphrases).
+
+### Design Trade-offs
+
+Qatsi is stateless by design. The same inputs always produce the same output. This eliminates entire classes of attacks (vault exfiltration, cloud sync interception, database compromise) but introduces fundamental limitations.
+
+1. Qatsi is not designed for website passwords with varying policies. It's meant for master passwords that unlock other tools (password managers, encrypted vaults, PGP keys) or for secrets in constrained environments (air-gapped systems, live boot USBs). Different sites enforce different requirements: length limits, mandatory symbols, banned characters. Qatsi generates uniform output and cannot adapt per-site without additional context. You can work around this by encoding variations into layers (e.g., `github.com/alphanumeric` vs `github.com/symbols`), but you must remember which variant you used. Traditional password managers store this metadata; Qatsi shifts the burden to you. Use a proper password manager for everyday logins.
+
+2. If a password leaks, you cannot simply regenerate a different one for the same site. Your options are to change the master secret (affecting all passwords) or modify the layer inputs (e.g., append `/v2`), which again requires remembering the modification. Password managers handle rotation trivially by storing independent entries. With Qatsi, rotation means either global changes or tracking mental state about which sites use modified layers.
+
+3. Exposing your master secret compromises every password derivable from it. There's no forward secrecy, no per-password isolation. Traditional managers can at least rotate the vault encryption key or limit exposure to passwords that existed at breach time. With Qatsi, one compromise cascades everywhere. You cannot add 2FA protection to the master secret without storing 2FA state somewhere, defeating the stateless design.
+
+4. If you have accounts with passwords you didn't generate through Qatsi, you must either reset them to Qatsi-generated values or store them elsewhere (undermining the "no storage" premise). Password managers let you gradually migrate by storing both old and new credentials.
+
+Use Qatsi if you prioritize eliminating persistent storage risks and need reproducible secrets across systems. Avoid it if you need to store existing passwords, frequently encounter strict password policies, or require seamless rotation after breaches. See [SECURITY.md](SECURITY.md) for detailed threat model.
 
 ## Test
 
