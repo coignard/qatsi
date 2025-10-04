@@ -1,6 +1,6 @@
 <img src="https://github.com/coignard/qatsi/blob/main/assets/logo.svg?raw=true" alt="Qatsi Logo" height="72">
 
-Hierarchical deterministic passphrase generator using hierarchical Argon2id key derivation. Generates cryptographically secure mnemonic or alphanumeric passphrases without storing anything to disk.
+Deterministic passphrase generator with layered Argon2id key derivation. Generates cryptographically secure mnemonic or alphanumeric passphrases without storing anything to disk.
 
 Designed for master passwords and other high-entropy secrets that need to be reproduced on-demand from a master secret and context layers.
 

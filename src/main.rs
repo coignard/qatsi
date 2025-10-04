@@ -6,7 +6,7 @@ mod wordlist;
 use anyhow::Result;
 use clap::{Parser, ValueEnum};
 
-const LOGO: &str = "\x1b[38;2;192;0;1m\
+const LOGO: &str = "\n\n\x1b[38;2;192;0;1m\
 ⣴⣿⠿⣿⣦⠀⣴⣿⠿⣿⣦⢸⣿⣿⣿⡇⣴⣿⠿⣿⣦⠀⣿⣿\n\
 ⣿⣿⠀⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⣿⣿⠀⠿⠿⠀⣿⣿\n\
 ⣿⣿⠀⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⣿⣿⣤⣤⠀⠀⣿⣿\n\
