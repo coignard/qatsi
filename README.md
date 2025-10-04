@@ -155,10 +155,13 @@ cargo test
 
 Test suite includes:
 - Determinism verification (identical inputs → identical outputs)
+- Regression tests (known input/output pairs for standard and paranoid presets)
+- Character set validation (exactly 90 chars, no duplicates)
 - Wordlist integrity (7776 words, SHA-256, known indices)
-- Rejection sampling correctness
-- Different layer combinations produce independent keys
-- Character set validation (exactly 90 chars)
+- Rejection sampling correctness (unbiased distribution)
+- Hierarchical chaining (different layer combinations → independent keys)
+- Unicode normalization (NFC/NFD equivalence, whitespace trimming)
+- Multi-byte Unicode handling (Cyrillic, CJK, emoji preservation)
 
 ## License
 
