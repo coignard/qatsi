@@ -23,13 +23,26 @@ cargo build --release
 sudo cp target/release/qatsi /usr/local/bin/
 ```
 
+## Quick Start
+
+1. **Install**: `cargo install --git https://github.com/coignard/qatsi`
+2. **Run**: `qatsi` (uses default: 8-word mnemonic, standard security)
+3. **Enter master secret** when prompted (hidden input)
+4. **Enter context layers** (e.g., `github.com`, `2025`, then empty line to finish)
+5. **Copy the generated output**
+
 ## Usage
 
+### Basic Commands
+
 ```bash
+# Default: 8-word mnemonic with standard security
+qatsi
+
 # 8-word mnemonic (≈103 bits entropy)
 qatsi --mode mnemonic --security standard
 
-# 24-word mnemonic (≈310 bits entropy)
+# 24-word mnemonic (≈310 bits entropy)  
 qatsi --mode mnemonic --security paranoid
 
 # 20-character password (≈130 bits entropy)
@@ -39,15 +52,31 @@ qatsi --mode password --security standard
 qatsi --mode password --security paranoid
 ```
 
-You can override the default security presets with custom parameters for fine-grained control:
+### Advanced Options
 
 ```bash
-# Generate a 12-word mnemonic with custom KDF memory (256 MiB)
-qatsi --mode mnemonic --words 12 --kdf-memory 256
+# Custom word count
+qatsi --mode mnemonic --words 12
 
-# Generate a 32-character password with custom KDF iterations
-qatsi --mode password --length 32 --kdf-iterations 24
+# Custom password length  
+qatsi --mode password --length 32
+
+# Custom KDF parameters (memory in MiB)
+qatsi --mode mnemonic --kdf-memory 256 --kdf-iterations 24 --kdf-parallelism 8
+
+# Get help
+qatsi --help
 ```
+
+### Complete CLI Options
+
+- `--mode` / `-m`: `mnemonic` or `password` (default: mnemonic)
+- `--security` / `-s`: `standard` or `paranoid` (default: standard)  
+- `--words`: Override mnemonic word count (default: 8 for standard, 24 for paranoid)
+- `--length`: Override password length (default: 20 for standard, 48 for paranoid)
+- `--kdf-memory`: Override KDF memory cost in MiB (default: 64 standard, 128 paranoid)
+- `--kdf-iterations`: Override KDF iterations (default: 16 standard, 32 paranoid)
+- `--kdf-parallelism`: Override KDF parallelism (default: 6 for both)
 
 Example usage:
 
@@ -147,6 +176,59 @@ Qatsi is stateless by design. The same inputs always produce the same output. Th
 
 Use Qatsi if you prioritize eliminating persistent storage risks and need reproducible secrets across systems. Avoid it if you need to store existing passwords, frequently encounter strict password policies, or require seamless rotation after breaches. See [SECURITY.md](SECURITY.md) for detailed threat model.
 
+## Common Use Cases
+
+### ✅ Good Use Cases
+- **KeePassXC/Bitwarden master passwords**: High-entropy, rarely changed
+- **Disk encryption passphrases**: LUKS, BitLocker, FileVault  
+- **PGP/GPG key passwords**: Long-term key protection
+- **SSH key passphrases**: Securing private keys
+- **Air-gapped systems**: Where password managers can't sync
+- **Live boot environments**: Tails, forensic tools
+- **Server encryption**: Database encryption keys, application secrets
+
+### ❌ Poor Use Cases  
+- **Website passwords**: Varying policies, rotation needs
+- **API keys**: Often need specific formats  
+- **Existing accounts**: Where you can't reset passwords
+- **Shared accounts**: Multiple people need access
+- **Frequently rotated secrets**: Where you need different passwords over time
+
+## Performance
+
+Expected generation times on modern hardware:
+
+| Hardware | Standard (64 MiB) | Paranoid (128 MiB) |
+|----------|-------------------|-------------------|
+| M1/M2 Mac | ~0.5s/layer | ~1.0s/layer |
+| Intel i7/i9 | ~0.7s/layer | ~1.4s/layer |
+| Raspberry Pi 4 | ~3.0s/layer | ~6.0s/layer |
+
+Memory usage scales with KDF settings. Standard preset uses ~64 MiB per layer derivation.
+
+## Troubleshooting
+
+### Installation Issues
+```bash
+# If cargo install fails, try building from source
+git clone https://github.com/coignard/qatsi
+cd qatsi
+cargo build --release
+
+# Ensure Rust is installed and up to date
+rustup update stable
+```
+
+### Performance Issues
+- **Slow derivation**: Normal for memory-hard KDF. Reduce `--kdf-memory` for faster generation
+- **Out of memory**: Lower `--kdf-memory` or use standard preset instead of paranoid
+- **Very slow on old hardware**: Consider standard preset or custom parameters
+
+### Input Issues  
+- **Unicode characters**: All input is normalized to NFC form and trimmed
+- **Control characters**: Will prompt for confirmation if detected
+- **Empty layers**: At least one layer required after master secret
+
 ## Test
 
 ```bash
@@ -162,6 +244,23 @@ Test suite includes:
 - Hierarchical chaining (different layer combinations → independent keys)
 - Unicode normalization (NFC/NFD equivalence, whitespace trimming)
 - Multi-byte Unicode handling (Cyrillic, CJK, emoji preservation)
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Development Setup
+```bash
+git clone https://github.com/coignard/qatsi
+cd qatsi
+cargo build
+cargo test
+cargo clippy  # Fix all warnings
+cargo fmt     # Format code
+```
+
+### Security Reports
+For security vulnerabilities, email `contact@renecoignard.com` instead of opening public issues.
 
 ## License
 
