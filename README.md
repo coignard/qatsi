@@ -1,10 +1,10 @@
 <img src="https://github.com/coignard/qatsi/blob/main/assets/logo.svg?raw=true" alt="Qatsi Logo" height="72">
 
-Deterministic passphrase generator with layered Argon2id key derivation. Generates cryptographically secure mnemonic or alphanumeric passphrases without storing anything to disk.
+Hierarchical deterministic key derivation using Argon2id. Generates cryptographically secure mnemonic or alphanumeric secrets without storing anything to disk.
 
 ---
 
-**Disclaimer:** Qatsi is not a password manager. It's a deterministic secret generator I built to solve one specific problem of mine: generating reproducible secrets from a small set of high-entropy master passwords I keep exclusively in memory for high-stakes credentials such as password manager encryption (master passwords, key files), full-disk encryption passphrases, PGP and SSH key passphrases, Proxmox backup encryption keys, and access to critical services where credential loss is unacceptable.
+**Disclaimer:** Qatsi is not a password manager. It's a hierarchical deterministic key derivation tool I built to solve one specific problem of mine: generating reproducible secrets from a small set of high-entropy master passwords I keep exclusively in memory for high-stakes credentials such as password manager encryption (master passwords, key files), full-disk encryption passphrases, PGP and SSH key passphrases, Proxmox backup encryption keys, and access to critical services where credential loss is unacceptable.
 
 For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi in contexts where you need reproducible secrets across air-gapped systems. See [SECURITY.md](SECURITY.md) for detailed threat model.
 
@@ -84,7 +84,7 @@ Stats:
 
 ## How it works
 
-The core of `qatsi` is a hierarchical key derivation process. The following diagram illustrates the flow from user input to the final generated output:
+The core of `qatsi` is hierarchical deterministic key derivation using Argon2id. The following diagram illustrates the flow from user input to the final generated output:
 
 <br>
 <div align="center">
