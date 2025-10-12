@@ -4,7 +4,7 @@ Deterministic passphrase generator with layered Argon2id key derivation. Generat
 
 ---
 
-**Disclaimer:** Qatsi is not a password manager. It's a deterministic secret generator designed for high-entropy master passwords (e.g., KeePassXC database keys), disk encryption passphrases, PGP key passwords, and other secrets that need to be reproduced on-demand without storage.
+**Disclaimer:** Qatsi is not a password manager. It's a deterministic secret generator I built to solve one specific problem of mine: generating reproducible secrets from a small set of high-entropy master passwords I keep exclusively in memory for high-stakes credentials such as password manager encryption (master passwords, key files), full-disk encryption passphrases, PGP and SSH key passphrases, Proxmox backup encryption keys, and access to critical services where credential loss is unacceptable.
 
 For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi in contexts where you need reproducible secrets across air-gapped systems. See [SECURITY.md](SECURITY.md) for detailed threat model.
 
