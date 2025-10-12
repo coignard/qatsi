@@ -2,9 +2,11 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Qatsi, please email: `contact@renecoignard.com`
+If you discover a security vulnerability in Qatsi, please report it via GitHub Security Advisories:
 
-**Do not** open a public issue.
+**[Report a vulnerability](https://github.com/coignard/qatsi/security/advisories/new)**
+
+Do not open a public issue or email the maintainers directly.
 
 ### What to include
 
@@ -17,6 +19,8 @@ If you discover a security vulnerability in Qatsi, please email: `contact@reneco
 
 - Initial response: 48 hours
 - Fix timeline: 7-14 days (depending on severity)
+
+GitHub Security Advisories provide a private communication channel and allow coordinated disclosure before public patching.
 
 ## Security Considerations
 
