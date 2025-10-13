@@ -98,19 +98,19 @@ Parameters:
 - $\ell$ — output length (bytes)
 
 ```
- M  ─────┐
-         ├─── Argon2id(K_0, salt(L_1), m, t, p) ──→ K_1
-L_1 ─────┘
+ M  ────┐
+        ├─── Argon2id(K_0, salt(L_1), m, t, p) ──→ K_1
+L_1 ────┘
 
-K_1 ─────┐
-         ├─── Argon2id(K_1, salt(L_2), m, t, p) ──→ K_2
-L_2 ─────┘
+K_1 ────┐
+        ├─── Argon2id(K_1, salt(L_2), m, t, p) ──→ K_2
+L_2 ────┘
 
     ⋮
 
-K_n-1 ───┐
-         ├─── Argon2id(K_n-1, salt(L_n), m, t, p) ──→ K_n
-L_n ─────┘
+K_n-1 ──┐
+        ├─── Argon2id(K_n-1, salt(L_n), m, t, p) ──→ K_n
+L_n ────┘
 
 K_n ──→ ChaCha20(K_n) ──→ Rejection sampling ──→ Output
 ```
