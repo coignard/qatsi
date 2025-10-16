@@ -239,19 +239,18 @@ Use Qatsi if you prioritize eliminating persistent storage risks and need reprod
 
 ## Test
 
+Run the complete test suite:
 ```bash
 cargo test
 ```
 
-Test suite includes:
-- Determinism verification (identical inputs → identical outputs)
-- Regression tests (known input/output pairs for standard and paranoid presets)
-- Character set validation (exactly 90 chars, no duplicates)
-- Wordlist integrity (7776 words, SHA-256, known indices)
-- Rejection sampling correctness (unbiased distribution)
-- Hierarchical chaining (different layer combinations → independent keys)
-- Unicode normalization (NFC/NFD equivalence, whitespace trimming)
-- Multi-byte Unicode handling (Cyrillic, CJK, emoji preservation)
+The test suite verifies core correctness guarantees. Determinism tests ensure identical inputs always produce identical outputs across runs and platforms. Regression tests validate known input/output pairs for both standard and paranoid security presets.
+
+Cryptographic primitives are validated through multiple layers. Character set tests confirm exactly 90 unique characters with no duplicates. Wordlist integrity checks verify all 7776 EFF words against their known SHA-256 hash and validate specific word indices. Rejection sampling tests prove statistically unbiased distribution across the entire output space.
+
+Hierarchical key derivation is tested for independence. Different layer combinations produce cryptographically independent keys with no correlation between outputs.
+
+Unicode handling covers normalization and multi-byte characters. Tests verify NFC/NFD equivalence, automatic whitespace trimming, and correct preservation of Cyrillic, CJK ideographs, and emoji sequences.
 
 ## License
 
