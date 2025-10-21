@@ -1,6 +1,6 @@
 <img src="https://github.com/coignard/qatsi/blob/main/assets/logo.svg?raw=true" alt="Qatsi Logo" height="72">
 
-Hierarchical deterministic key derivation using Argon2id. Generates cryptographically secure mnemonic or alphanumeric secrets without storing anything to disk.
+Stateless secret generation via hierarchical memory-hard key derivation using Argon2id. Generates cryptographically secure mnemonic or alphanumeric secrets without storing anything to disk.
 
 ---
 
