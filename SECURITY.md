@@ -174,7 +174,7 @@ Qatsi protects against:
 
 Qatsi does not protect against:
 
-- Master secret compromise: If the master secret is exposed, all derived secrets are compromised. There is no key isolation or forward secrecy.
+- Master secret compromise: If the master secret is exposed, all derived secrets are compromised. There is no key isolation.
 - Side-channel attacks: No constant-time guarantees. Timing attacks, cache attacks, and power analysis are not mitigated.
 - Input observation: Keyloggers, screen capture, or shoulder surfing during master secret entry.
 - Quantum adversaries: Grover's algorithm reduces effective security by half (80-bit entropy becomes 40-bit resistance).
