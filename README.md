@@ -2,6 +2,8 @@
 
 Stateless secret generation via hierarchical memory-hard key derivation using Argon2id. Generates cryptographically secure mnemonic or alphanumeric secrets without storing anything to disk.
 
+📄 <a href="paper/qatsi-technical-report.pdf"><strong>Technical Report</strong></a>
+
 ---
 
 **Disclaimer:** Qatsi is not a password manager. It's a hierarchical deterministic key derivation tool I built to solve one specific problem of mine: generating reproducible secrets from a small set of high-entropy master secrets I keep exclusively in memory for high-stakes credentials such as password manager encryption (master passwords, key files), full-disk encryption passphrases, PGP and SSH key passphrases, Proxmox backup encryption keys, and access to critical services where credential loss is unacceptable.
