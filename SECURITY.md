@@ -211,7 +211,7 @@ Qatsi is designed for:
 - Password manager master passwords (KeePassXC, Bitwarden)
 - Full-disk encryption passphrases (LUKS, BitLocker, FileVault)
 - PGP/SSH key passphrases
-- Cryptocurrency wallet seeds
+- Cryptocurrency wallet encryption passphrases
 - Critical service credentials on air-gapped systems
 
 ### Inappropriate use cases
