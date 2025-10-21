@@ -98,7 +98,7 @@ Parameters:
 - $\ell$ — output length (bytes)
 
 ```
- M  ────┐
+K_0 ────┐
         ├─── Argon2id(K_0, salt(L_1), m, t, p) ──→ K_1
 L_1 ────┘
 
