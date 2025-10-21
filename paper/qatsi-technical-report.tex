@@ -66,7 +66,7 @@
 We present Qatsi, a hierarchical key derivation scheme using Argon2id that generates reproducible cryptographic secrets without persistent storage. The system eliminates vault-based attack surfaces by deriving all secrets deterministically from a single high-entropy master secret and contextual layers. Outputs achieve 103--312~bits of entropy through memory-hard derivation (64--128~MiB, 16--32~iterations) and provably uniform rejection sampling over 7776-word mnemonics or 90-character passwords. We formalize the hierarchical construction, prove output uniformity, and quantify GPU attack costs: $2.4 \times 10^{16}$~years for 80-bit master secrets on single-GPU adversaries under Paranoid parameters (128~MiB memory). The implementation in Rust provides automatic memory zeroization, compile-time wordlist integrity verification, and comprehensive test coverage. Reference benchmarks on Apple M1 Pro (2021) demonstrate practical usability with 544~ms Standard mode and 2273~ms Paranoid mode single-layer derivations. Qatsi targets air-gapped systems and master credential generation where stateless reproducibility outweighs rotation flexibility.
 \end{abstract}
 
-\noindent\textbf{Keywords:} 
+\noindent\textbf{Keywords:}
 Key derivation, Argon2id, memory-hard functions, hierarchical derivation, stateless password management.
 
 \section{Introduction}
@@ -138,7 +138,7 @@ Parameters: $m$ (memory cost in KiB), $t$ (iterations), $p$ (parallelism), $\ell
 \begin{definition}[Salt Preprocessing]
 For input $L \in \{0,1\}^*$:
 \begin{equation}
-\textsc{Salt}(L) = 
+\textsc{Salt}(L) =
 \begin{cases}
 L & \text{if } |L| \geq 16 \text{ bytes} \\
 \textsc{Blake2b-512}(L) & \text{if } |L| < 16 \text{ bytes}
@@ -490,7 +490,7 @@ Time complexity: $O(n)$ in layer count. Space complexity: $O(1)$ in output size,
 
 \subsection{Use Cases}
 
-\textbf{Appropriate:} Password manager master passwords (KeePassXC, Bitwarden), full-disk encryption passphrases (LUKS, BitLocker, FileVault), PGP/SSH key passphrases, cryptocurrency wallet seeds, critical service credentials on air-gapped systems.
+\textbf{Appropriate:} Password manager master passwords (KeePassXC, Bitwarden), full-disk encryption passphrases (LUKS, BitLocker, FileVault), PGP/SSH key passphrases, cryptocurrency wallet encryption passphrases, critical service credentials on air-gapped systems.
 
 \textbf{Inappropriate:} General website passwords (varying policies, frequent rotation), existing credentials (API keys, legacy passwords), multi-device sync with conflict resolution, scenarios requiring key isolation after breach.
 

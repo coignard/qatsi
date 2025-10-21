@@ -2,13 +2,10 @@
 
 Stateless secret generation via hierarchical memory-hard key derivation using Argon2id. Generates cryptographically secure mnemonic or alphanumeric secrets without storing anything to disk.
 
-📄 <a href="paper/qatsi-technical-report.pdf"><strong>Technical Report</strong></a>
-
----
-
-**Disclaimer:** Qatsi is not a password manager. It's a hierarchical deterministic key derivation tool I built to solve one specific problem of mine: generating reproducible secrets from a small set of high-entropy master secrets I keep exclusively in memory for high-stakes credentials such as password manager encryption (master passwords, key files), full-disk encryption passphrases, PGP and SSH key passphrases, Proxmox backup encryption keys, and access to critical services where credential loss is unacceptable.
-
-For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi in contexts where you need reproducible secrets across air-gapped systems. See [SECURITY.md](SECURITY.md) for detailed threat model.
+> [!CAUTION]
+> Qatsi is not a password manager. It is a hierarchical deterministic key derivation tool designed for generating reproducible secrets from high-entropy master secrets for high-stakes credentials: password manager master passwords, full-disk encryption passphrases, PGP and SSH key passphrases, and access to critical services on air-gapped systems where credential loss is unacceptable.
+>
+> For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi where you need reproducible secrets across systems without persistent storage. See [SECURITY.md](SECURITY.md) for threat model and design limitations, or the [technical report](paper/qatsi-technical-report.pdf) for detailed cryptographic analysis.
 
 ## Install
 
@@ -28,16 +25,16 @@ sudo cp target/release/qatsi /usr/local/bin/
 ## Usage
 
 ```bash
-# 8-word mnemonic (≈103 bits entropy)
+# 8-word mnemonic (103.4 bits entropy)
 qatsi --mode mnemonic --security standard
 
-# 24-word mnemonic (≈310 bits entropy)
+# 24-word mnemonic (310.2 bits entropy)
 qatsi --mode mnemonic --security paranoid
 
-# 20-character password (≈130 bits entropy)
+# 20-character password (129.8 bits entropy)
 qatsi --mode password --security standard
 
-# 48-character password (≈312 bits entropy)
+# 48-character password (311.6 bits entropy)
 qatsi --mode password --security paranoid
 ```
 
@@ -84,181 +81,127 @@ Stats:
 
 ## How it works
 
-Qatsi combines a master secret with context layers through iterative Argon2id hashing. The final derived key seeds a ChaCha20 stream cipher for unbiased generation of mnemonics or passwords.
+Qatsi combines a master secret with context layers through iterative Argon2id hashing. The final derived key seeds a ChaCha20 stream cipher for unbiased generation of mnemonics or passwords. For a detailed cryptographic analysis, see the [technical report](paper/qatsi-technical-report.pdf).
 
-Let $K_0 = M$ (master secret as bytes). For each layer $L_i$ with $i \in [1, n]$:
+Let $K_0 = M$ (master secret). For each layer $L_i$ with $i \in [1, n]$:
 
-$$K_i = \text{Argon2id}(K_{i-1}, \text{salt}(L_i), m, t, p, \ell)$$
+$$K_i = \text{Argon2id}(K_{i-1}, \text{Salt}(L_i), m, t, p, \ell)$$
+
+where:
+
+$$\text{Salt}(L) = \begin{cases}
+L & \text{if } |L| \geq 16 \text{ bytes} \\
+\text{BLAKE2b-512}(L) & \text{if } |L| < 16 \text{ bytes}
+\end{cases}$$
 
 Parameters:
 
 - $K_{i-1}$ — previous derived key (or master secret for $i=1$)
-- $\text{salt}(L_i)$ — either $L_i$ directly (if $|L_i| \geq 16$ bytes) or $\text{BLAKE2b-512}(L_i)$ (64-byte output for inputs $< 16$ bytes)
-- $m$ — memory cost (in KiB)
-- $t$ — number of iterations
-- $p$ — parallelism (number of lanes)
-- $\ell$ — output length (32 bytes = 256 bits)
+- $m$ — memory cost (KiB): 65536 (Standard) or 131072 (Paranoid)
+- $t$ — iterations: 16 (Standard) or 32 (Paranoid)
+- $p$ — parallelism: 6
+- $\ell$ — output length: 32 bytes (256 bits)
 
 ```
 K_0 ────┐
-        ├─── Argon2id(K_0, salt(L_1), m, t, p) ──→ K_1
+        ├─── Argon2id(K_0, Salt(L_1), m, t, p) ──→ K_1
 L_1 ────┘
 
 K_1 ────┐
-        ├─── Argon2id(K_1, salt(L_2), m, t, p) ──→ K_2
+        ├─── Argon2id(K_1, Salt(L_2), m, t, p) ──→ K_2
 L_2 ────┘
 
     ⋮
 
 K_n-1 ──┐
-        ├─── Argon2id(K_n-1, salt(L_n), m, t, p) ──→ K_n
+        ├─── Argon2id(K_n-1, Salt(L_n), m, t, p) ──→ K_n
 L_n ────┘
 
 K_n ──→ ChaCha20(K_n) ──→ Rejection sampling ──→ Output
 ```
 
-Rejection sampling for mnemonics (7776-word EFF list):
+### Unbiased rejection sampling
+
+Rejection sampling eliminates modulo bias by rejecting values outside a uniform range.
+
+Mnemonics (EFF Large Wordlist, 7776 words):
 
 ```
 Threshold T = ⌊2^16 / 7776⌋ × 7776 = 8 × 7776 = 62208
 
 Algorithm:
-  1. Sample 16-bit random value r from ChaCha20 keystream
+  1. Sample 16-bit value r from ChaCha20 keystream
   2. If r < 62208:
-       Select word: w = W[r mod 7776]
+       Select word: W[r mod 7776]
   3. Else: reject and repeat
 
-Expected samples per word: 2^16 / 62208 ≈ 1.053
-Rejection rate: (65536 - 62208) / 65536 ≈ 5.08%
+Expected samples per word: 65536 / 62208 ≈ 1.053
+Rejection rate: 3328 / 65536 ≈ 5.08%
 ```
 
-Rejection sampling for passwords (90-character alphabet):
+Passwords (90-character alphabet: A-Z, a-z, 0-9, 28 symbols):
 
 ```
 Threshold T = 256 - (256 mod 90) = 180
 
 Algorithm:
-  1. Sample 8-bit random value b from ChaCha20 keystream
+  1. Sample 8-bit value b from ChaCha20 keystream
   2. If b < 180:
-       Select character: c = A[b mod 90]
+       Select character: A[b mod 90]
   3. Else: reject and repeat
 
 Expected samples per character: 256 / 180 ≈ 1.422
-Rejection rate: (256 - 180) / 256 ≈ 29.69%
+Rejection rate: 76 / 256 ≈ 29.69%
 ```
 
-This ensures uniform distribution over all words and characters.
+This provably achieves uniform distribution (proven in Section 3.4 of the technical report).
 
 ### Output entropy
 
-Mnemonics (EFF Large wordlist, 7776 words):
+Mnemonics (7776-word EFF Large Wordlist):
 
-$$E_{\text{mnemonic}} = w \times \log_2(7776) = w \times 12.925 \text{ bits}$$
+$$H_{\text{mnemonic}} = w \times \log_2(7776) = w \times 12.925 \text{ bits}$$
 
-Where $w$ is the number of words:
-- Standard: $w = 8 \Rightarrow E = 103.4 \text{ bits}$
-- Paranoid: $w = 24 \Rightarrow E = 310.2 \text{ bits}$
+- Standard (8 words): 103.4 bits
+- Paranoid (24 words): 310.2 bits
 
 Passwords (90-character alphabet):
 
-$$E_{\text{password}} = \ell \times \log_2(90) = \ell \times 6.492 \text{ bits}$$
+$$H_{\text{password}} = \ell \times \log_2(90) = \ell \times 6.492 \text{ bits}$$
 
-Where $\ell$ is the password length:
-- Standard: $\ell = 20 \Rightarrow E = 129.8 \text{ bits}$
-- Paranoid: $\ell = 48 \Rightarrow E = 311.6 \text{ bits}$
+- Standard (20 characters): 129.8 bits
+- Paranoid (48 characters): 311.6 bits
 
-## Security
+## Performance
 
-Argon2id parameters are chosen to resist GPU/ASIC attacks through memory-hardness. All configurations use 256-bit output length and the following settings:
+Measured on Apple M1 Pro (2021), 16 GB RAM, Rust 1.90 release build, median of 5 runs:
 
-| Profile | Memory | Iterations | Parallelism | Time per hash* |
-|---------|--------|------------|-------------|---|
-| Standard | 64 MiB | 16 | 6 | ≈0.5-1s |
-| Paranoid | 128 MiB | 32 | 6 | ≈1-2s |
+| Operation | Time (ms) | Memory (MB) |
+|-----------|-----------|-------------|
+| Standard (64 MiB, t=16, p=6) | | |
+| Single layer | 544 | 64 |
+| 3 layers | 1613 | 64 |
+| Paranoid (128 MiB, t=32, p=6) | | |
+| Single layer | 2273 | 128 |
+| 3 layers | 6697 | 128 |
+| Output generation | <1 | <1 |
 
-*Time estimates based on high-end GPUs (e.g., NVIDIA Tesla P100). Actual performance varies by hardware.
+Output generation (1000 iterations): mnemonic 2 µs, password 3 µs.
 
-### Attack cost analysis
-
-For an 80-bit master secret with the paranoid preset (128 MiB, 32 iterations, 6 parallelism):
-
-Average-case search (brute-force budget divided by 2):
-
-$$S = 2^{79} \approx 6.0 \times 10^{23} \text{ attempts}$$
-
-Single GPU attack:
-- Time per hash: ≈1.25 seconds
-- Total time: $2^{79} \times 1.25\text{s} \approx 7.6 \times 10^{23}$ seconds
-- Years: $\approx 2.4 \times 10^{16}$ years on a single high-end GPU
-
-500-GPU Cluster attack (linear scaling):
-
-$$T_{500} = \frac{2.4 \times 10^{16}}{500} \approx 4.8 \times 10^{13} \text{ years}$$
-
-With realistic 10% efficiency overhead:
-
-$$T_{500,\text{overhead}} \approx 5.3 \times 10^{13} \text{ years}$$
-
-### Security assumptions
-
-This analysis assumes:
-
-1. Attacker has access to high-end GPUs
-2. Cluster is optimally configured with minimal synchronization overhead (realistic clusters may have 5-15% efficiency loss)
-3. Master secret has full 80 bits of entropy (must be generated using cryptographically secure RNG, not derived from human input)
-4. No advanced attacks on Argon2 have been discovered (current state of cryptanalysis as of 2025)
-
-This security analysis only applies if your master secret has at least 80 bits of true entropy. Weak passphrases (dictionary words, patterns, predictable text, or human-generated passwords) dramatically reduce these estimates and may be cracked in hours or days.
-
-Generate master secrets using a cryptographically secure pseudorandom number generator (CSPRNG) such as `/dev/urandom` or equivalent on an air-gapped device:
-
-```bash
-# Generate a 96-bit random master secret (12 bytes)
-od -An -tx1 -N12 /dev/urandom | tr -d ' '
-
-# Or 11 random words from the EFF wordlist (≈142 bits)
-shuf -n 11 eff_large_wordlist.txt | tr '\n' '-' | sed 's/-$//'
-```
-
-### Cryptographic properties
-
-- Automatic memory zeroization via `Zeroizing<T>` for all sensitive data (master secret, layers, salts, derived keys, and generated output)
-- EFF Large Wordlist (7776 words) embedded with compile-time SHA-256 integrity verification
-- ChaCha20 stream cipher (256-bit security) used as keystream generator
-- Unbiased rejection sampling for provably uniform character and word distribution
-
-### Threat model
-
-Protects against offline brute-force attacks, dictionary attacks, GPU/ASIC acceleration, supply-chain attacks (wordlist tampering), and memory disclosure on the host system. It does not provide key isolation (a compromised master secret exposes all derived passphrases).
-
-### Design trade-offs
-
-Qatsi is stateless by design. The same inputs always produce the same output. This eliminates entire classes of attacks (vault exfiltration, cloud sync interception, database compromise) but introduces fundamental limitations.
-
-1. Qatsi is not designed for website passwords with varying policies. It's meant for master passwords that unlock other tools (password managers, encrypted vaults, PGP keys) or for secrets in constrained environments (air-gapped systems, live boot USBs). Different sites enforce different requirements: length limits, mandatory symbols, banned characters. Qatsi generates uniform output and cannot adapt per-site without additional context. You can work around this by encoding variations into layers (e.g., `github.com/alphanumeric` vs `github.com/symbols`), but you must remember which variant you used. Traditional password managers store this metadata; Qatsi shifts the burden to you. Use a proper password manager for everyday logins.
-
-2. If a password leaks, you cannot simply regenerate a different one for the same site. Your options are to change the master secret (affecting all passwords) or modify the layer inputs (e.g., append `/v2`), which again requires remembering the modification. Password managers handle rotation trivially by storing independent entries. With Qatsi, rotation means either global changes or tracking mental state about which sites use modified layers.
-
-3. Exposing your master secret compromises every password derivable from it. There's no key isolation, no per-password protection. Traditional managers can at least rotate the vault encryption key or limit exposure to passwords that existed at breach time. With Qatsi, one compromise cascades everywhere. You cannot add 2FA protection to the master secret without storing 2FA state somewhere, defeating the stateless design.
-
-4. If you have accounts with passwords you didn't generate through Qatsi, you must either reset them to Qatsi-generated values or store them elsewhere (undermining the "no storage" premise). Password managers let you gradually migrate by storing both old and new credentials.
-
-Use Qatsi if you prioritize eliminating persistent storage risks and need reproducible secrets across systems. Avoid it if you need to store existing passwords, frequently encounter strict password policies, or require seamless rotation after breaches. See [SECURITY.md](SECURITY.md) for detailed threat model.
+Time complexity: $O(n)$ in layer count. Space complexity: $O(1)$ in output size, $O(m)$ in KDF memory.
 
 ## Test
 
 Run the complete test suite:
+
 ```bash
 cargo test
 ```
 
-The test suite verifies core correctness guarantees. Determinism tests ensure identical inputs always produce identical outputs across runs and platforms. Regression tests validate known input/output pairs for both standard and paranoid security presets.
+## Documentation
 
-Cryptographic primitives are validated through multiple layers. Character set tests confirm exactly 90 unique characters with no duplicates. Wordlist integrity checks verify all 7776 EFF words against their known SHA-256 hash and validate specific word indices. Rejection sampling tests prove statistically unbiased distribution across the entire output space.
-
-Hierarchical key derivation is tested for independence. Different layer combinations produce cryptographically independent keys with no correlation between outputs.
-
-Unicode handling covers normalization and multi-byte characters. Tests verify NFC/NFD equivalence, automatic whitespace trimming, and correct preservation of Cyrillic, CJK ideographs, and emoji sequences.
+- [Technical report](paper/qatsi-technical-report.pdf)
+- [SECURITY.md](SECURITY.md)
 
 ## License
 
