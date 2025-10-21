@@ -345,7 +345,7 @@ fn display_settings(
         );
     }
 
-    println!("  ├─ PRNG       ChaCha20 (256-bit)");
+    println!("  ├─ Keystream  ChaCha20 (256-bit)");
     println!("  ├─ Sampling   Unbiased rejection");
 
     if config.is_mnemonic {
