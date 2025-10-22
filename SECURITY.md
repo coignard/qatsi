@@ -276,4 +276,4 @@ Maintain physical copy of master secret in secure location (safe, bank deposit b
 
 ## Audit status
 
-No formal security audit has been conducted. The codebase is open-source and community review is welcome. See the [technical report](paper/qatsi-technical-report.pdf) for formal cryptographic analysis with proofs of output uniformity, GPU attack cost quantification, and detailed security analysis.
+No formal security audit has been conducted. The codebase is open-source and community review is welcome. See the [technical report](https://doi.org/10.48550/arXiv.2510.18614) for formal cryptographic analysis with proofs of output uniformity, GPU attack cost quantification, and detailed security analysis.

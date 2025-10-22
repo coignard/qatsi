@@ -5,7 +5,7 @@ Stateless secret generation via hierarchical memory-hard key derivation using Ar
 > [!CAUTION]
 > Qatsi is not a password manager. It is a hierarchical deterministic key derivation tool designed for generating reproducible secrets from high-entropy master secrets for high-stakes credentials: password manager master passwords, full-disk encryption passphrases, PGP and SSH key passphrases, and access to critical services on air-gapped systems where credential loss is unacceptable.
 >
-> For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi where you need reproducible secrets across systems without persistent storage. See [SECURITY.md](SECURITY.md) for threat model and design limitations, or the [technical report](paper/qatsi-technical-report.pdf) for detailed cryptographic analysis.
+> For day-to-day website passwords with varying policies, rotation requirements, and existing credentials, use a traditional password manager like KeePassXC or Bitwarden. Use Qatsi where you need reproducible secrets across systems without persistent storage. See [SECURITY.md](SECURITY.md) for threat model and design limitations, or the [technical report](https://doi.org/10.48550/arXiv.2510.18614) for detailed cryptographic analysis.
 
 ## Install
 
@@ -81,7 +81,7 @@ Stats:
 
 ## How it works
 
-Qatsi combines a master secret with context layers through iterative Argon2id hashing. The final derived key seeds a ChaCha20 stream cipher for unbiased generation of mnemonics or passwords. For a detailed cryptographic analysis, see the [technical report](paper/qatsi-technical-report.pdf).
+Qatsi combines a master secret with context layers through iterative Argon2id hashing. The final derived key seeds a ChaCha20 stream cipher for unbiased generation of mnemonics or passwords. For a detailed cryptographic analysis, see the [technical report](https://doi.org/10.48550/arXiv.2510.18614).
 
 Let $K_0 = M$ (master secret). For each layer $L_i$ with $i \in [1, n]$:
 
@@ -200,7 +200,7 @@ cargo test
 
 ## Documentation
 
-- [Technical report](paper/qatsi-technical-report.pdf)
+- [Technical report](https://doi.org/10.48550/arXiv.2510.18614)
 - [SECURITY.md](SECURITY.md)
 
 ## License
