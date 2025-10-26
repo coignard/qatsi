@@ -294,7 +294,11 @@ fn display_settings(
     };
 
     let kdf_status = if kdf_secure { check_ok } else { check_warn };
-    let master_status = if master_bytes_secure { check_ok } else { check_warn };
+    let master_status = if master_bytes_secure {
+        check_ok
+    } else {
+        check_warn
+    };
     let layers_status = if layers_secure { check_ok } else { check_warn };
 
     println!("Settings:");
@@ -350,7 +354,11 @@ fn display_settings(
             Style::new().yellow()
         };
 
-        let layer_status = if layer_bytes_secure { check_ok } else { check_warn };
+        let layer_status = if layer_bytes_secure {
+            check_ok
+        } else {
+            check_warn
+        };
 
         println!(
             "  {} {} In [{}]: {} {} ({} {})",
