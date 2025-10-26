@@ -15,13 +15,21 @@ const LOGO: &str = "\n\n\x1b[38;2;192;0;1m\
 ⣿⣿⣤⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⢿⣿⣤⣿⣿⠀⣿⣿\n\
 ⠈⠛⠛⠛⢿⠀⠛⠛⠀⠛⠛⠀⠘⠛⠃⠀⠀⠙⠛⠛⠁⠀⠛⠛\x1b[0m";
 
+fn get_logo() -> &'static str {
+    if ui::detect_unicode_support() {
+        LOGO
+    } else {
+        ""
+    }
+}
+
 #[derive(Parser)]
 #[command(
     name = "qatsi",
     version,
     author,
     about = "Hierarchical deterministic passphrase generator using Argon2id",
-    before_help = LOGO
+    before_help = get_logo()
 )]
 struct Cli {
     #[arg(
@@ -56,6 +64,9 @@ struct Cli {
 
     #[arg(long, value_name = "LANES", help = "Override KDF parallelism")]
     kdf_parallelism: Option<u32>,
+
+    #[arg(long, help = "Disable Unicode output")]
+    no_unicode: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
@@ -74,6 +85,12 @@ enum SecurityLevel {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    let unicode_support = if cli.no_unicode {
+        false
+    } else {
+        ui::detect_unicode_support()
+    };
 
     let (master_secret, master_byte_length, master_char_count) = ui::prompt_master_secret()?;
 
@@ -122,7 +139,7 @@ fn main() -> Result<()> {
         },
     };
 
-    let ((output, info, out_cfg, kdf_cfg), elapsed) = ui::show_progress(|| {
+    let ((output, info, out_cfg, kdf_cfg), elapsed) = ui::show_progress(unicode_support, || {
         let final_key = kdf::derive_hierarchical(&master_secret, &layers, kdf_config)?;
 
         if output_config.is_mnemonic {
@@ -134,7 +151,7 @@ fn main() -> Result<()> {
         }
     })?;
 
-    ui::display_output(&output, &info, &out_cfg, &kdf_cfg, elapsed);
+    ui::display_output(&output, &info, &out_cfg, &kdf_cfg, elapsed, unicode_support);
 
     Ok(())
 }

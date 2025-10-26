@@ -49,6 +49,18 @@ pub struct OutputConfig {
     pub is_mnemonic: bool,
 }
 
+pub fn detect_unicode_support() -> bool {
+    supports_unicode::on(supports_unicode::Stream::Stdout)
+}
+
+pub fn get_status_symbols(unicode_support: bool) -> (&'static str, &'static str) {
+    if unicode_support {
+        ("✓", "!")
+    } else {
+        ("+", "!")
+    }
+}
+
 fn validate_control_characters(s: &str, input_name: &str) -> Result<String> {
     let control_chars: Vec<(usize, char)> = s
         .chars()
@@ -174,7 +186,7 @@ pub fn prompt_layers() -> Result<(Vec<Zeroizing<String>>, Vec<LayerInfo>)> {
     Ok((layers, layer_infos))
 }
 
-pub fn show_progress<F, T>(f: F) -> Result<(T, Duration)>
+pub fn show_progress<F, T>(unicode_support: bool, f: F) -> Result<(T, Duration)>
 where
     F: FnOnce() -> Result<T>,
 {
@@ -184,12 +196,23 @@ where
     term.hide_cursor().ok();
 
     let pb = ProgressBar::new_spinner();
-    pb.set_style(
-        ProgressStyle::default_spinner()
-            .template("{spinner} {msg}")
-            .unwrap_or_else(|_| ProgressStyle::default_spinner())
-            .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
-    );
+
+    if unicode_support {
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{spinner} {msg}")
+                .unwrap_or_else(|_| ProgressStyle::default_spinner())
+                .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
+        );
+    } else {
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{spinner} {msg}")
+                .unwrap_or_else(|_| ProgressStyle::default_spinner())
+                .tick_strings(&["-", "\\", "|", "/"]),
+        );
+    }
+
     pb.set_message("Deriving key...");
     pb.enable_steady_tick(Duration::from_millis(80));
 
@@ -209,6 +232,7 @@ pub fn display_output(
     config: &OutputConfig,
     kdf_config: &crate::kdf::Argon2Config,
     elapsed: Duration,
+    unicode_support: bool,
 ) {
     let entropy = if config.is_mnemonic {
         config.word_count as f64 * (config.wordlist_size as f64).log2()
@@ -218,15 +242,18 @@ pub fn display_output(
 
     println!("Out[0]:\n{}\n", &**output);
 
-    display_settings(input_info, config, kdf_config);
-    display_stats(entropy, output.len(), config, elapsed);
+    display_settings(input_info, config, kdf_config, unicode_support);
+    display_stats(entropy, output.len(), config, elapsed, unicode_support);
 }
 
 fn display_settings(
     input_info: &InputInfo,
     config: &OutputConfig,
     kdf_config: &crate::kdf::Argon2Config,
+    unicode_support: bool,
 ) {
+    let (check_ok, check_warn) = get_status_symbols(unicode_support);
+
     let memory_mib = kdf_config.memory_mib();
 
     let (min_memory, min_iterations, min_parallelism) = if memory_mib >= MIN_KDF_MEMORY_MIB_PARANOID
@@ -266,9 +293,9 @@ fn display_settings(
         Style::new().yellow()
     };
 
-    let kdf_status = if kdf_secure { "✓" } else { "!" };
-    let master_status = if master_bytes_secure { "✓" } else { "!" };
-    let layers_status = if layers_secure { "✓" } else { "!" };
+    let kdf_status = if kdf_secure { check_ok } else { check_warn };
+    let master_status = if master_bytes_secure { check_ok } else { check_warn };
+    let layers_status = if layers_secure { check_ok } else { check_warn };
 
     println!("Settings:");
 
@@ -323,7 +350,7 @@ fn display_settings(
             Style::new().yellow()
         };
 
-        let layer_status = if layer_bytes_secure { "✓" } else { "!" };
+        let layer_status = if layer_bytes_secure { check_ok } else { check_warn };
 
         println!(
             "  {} {} In [{}]: {} {} ({} {})",
@@ -373,13 +400,21 @@ fn display_settings(
     println!();
 }
 
-fn display_stats(entropy: f64, length: usize, config: &OutputConfig, elapsed: Duration) {
+fn display_stats(
+    entropy: f64,
+    length: usize,
+    config: &OutputConfig,
+    elapsed: Duration,
+    unicode_support: bool,
+) {
+    let (check_ok, check_warn) = get_status_symbols(unicode_support);
+
     let (status_icon, entropy_style, status_text) = if entropy >= PARANOID_ENTROPY {
-        ("✓", Style::new().green(), "Paranoid")
+        (check_ok, Style::new().green(), "Paranoid")
     } else if entropy >= MIN_SAFE_ENTROPY {
-        ("✓", Style::new().green(), "Strong")
+        (check_ok, Style::new().green(), "Strong")
     } else {
-        ("!", Style::new().yellow(), "Weak")
+        (check_warn, Style::new().yellow(), "Weak")
     };
 
     let length_secure = if config.is_mnemonic {
@@ -393,7 +428,7 @@ fn display_stats(entropy: f64, length: usize, config: &OutputConfig, elapsed: Du
     } else {
         Style::new().yellow()
     };
-    let length_status = if length_secure { "✓" } else { "!" };
+    let length_status = if length_secure { check_ok } else { check_warn };
 
     println!("Stats:");
 
@@ -445,6 +480,20 @@ fn display_stats(entropy: f64, length: usize, config: &OutputConfig, elapsed: Du
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_status_symbols_unicode() {
+        let (ok, warn) = get_status_symbols(true);
+        assert_eq!(ok, "✓");
+        assert_eq!(warn, "!");
+    }
+
+    #[test]
+    fn test_get_status_symbols_ascii() {
+        let (ok, warn) = get_status_symbols(false);
+        assert_eq!(ok, "+");
+        assert_eq!(warn, "!");
+    }
 
     #[test]
     fn test_normalize_nfc() {
