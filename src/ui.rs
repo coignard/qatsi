@@ -202,14 +202,18 @@ where
             ProgressStyle::default_spinner()
                 .template("{spinner} {msg}")
                 .unwrap_or_else(|_| ProgressStyle::default_spinner())
-                .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
+                .tick_strings(&[
+                    "⠁", "⠂", "⠄", "⡀", "⡈", "⡐", "⡠", "⣀", "⣁", "⣂", "⣄", "⣌", "⣔", "⣤", "⣥", "⣦",
+                    "⣮", "⣶", "⣷", "⣿", "⡿", "⠿", "⢟", "⠟", "⡛", "⠛", "⠫", "⢋", "⠋", "⠍", "⡉", "⠉",
+                    "⠑", "⠡", "⢁", "⠁",
+                ]),
         );
     } else {
         pb.set_style(
             ProgressStyle::default_spinner()
                 .template("{spinner} {msg}")
                 .unwrap_or_else(|_| ProgressStyle::default_spinner())
-                .tick_strings(&["-", "\\", "|", "/"]),
+                .tick_chars("-\\|/-"),
         );
     }
 
