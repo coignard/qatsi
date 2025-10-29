@@ -6,6 +6,13 @@ authors = [
     "Anton Rygin <anton.rygin@tu-dresden.de>"
 ]
 edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Stateless secret generation via hierarchical memory-hard key derivation using Argon2id"
+homepage = "https://coignard.org/qatsi"
+repository = "https://github.com/coignard/qatsi"
+readme = "README.md"
+keywords = ["argon2", "kdf", "cryptography", "security", "stateless"]
+categories = ["cryptography", "command-line-utilities"]
 
 [dependencies]
 argon2 = { version = "0.5.3", features = ["std"] }
