@@ -12,7 +12,7 @@ anyhow = "1.0.100"
 blake2 = "0.10.6"
 clap = { version = "4.5.50", features = ["derive"] }
 console = "0.16.1"
-indicatif = "0.18.0"
+indicatif = "0.18.2"
 unicode-normalization = "0.1.24"
 supports-unicode = "3.0"
 
