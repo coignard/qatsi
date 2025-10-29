@@ -6,30 +6,17 @@ mod wordlist;
 use anyhow::Result;
 use clap::{Parser, ValueEnum};
 
-const LOGO: &str = "\n\n\x1b[38;2;192;0;1m\
-⣴⣿⠿⣿⣦⠀⣴⣿⠿⣿⣦⢸⣿⣿⣿⡇⣴⣿⠿⣿⣦⠀⣿⣿\n\
-⣿⣿⠀⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⣿⣿⠀⠿⠿⠀⣿⣿\n\
-⣿⣿⠀⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⣿⣿⣤⣤⠀⠀⣿⣿\n\
-⣿⣿⠀⣿⣿⠀⣿⣿⣀⣿⣿⠀⢸⣿⡇⠀⠈⠛⠛⣿⣿⠀⣿⣿\n\
-⣿⣿⠀⣿⣿⠀⣿⣿⠉⣿⣿⠀⢸⣿⡇⠀⣶⣶⠀⣿⣿⠀⣿⣿\n\
-⣿⣿⣤⣿⣿⠀⣿⣿⠀⣿⣿⠀⢸⣿⡇⠀⢿⣿⣤⣿⣿⠀⣿⣿\n\
-⠈⠛⠛⠛⢿⠀⠛⠛⠀⠛⠛⠀⠘⠛⠃⠀⠀⠙⠛⠛⠁⠀⠛⠛\x1b[0m";
-
-fn get_logo() -> &'static str {
-    if ui::detect_unicode_support() {
-        LOGO
-    } else {
-        ""
-    }
-}
-
 #[derive(Parser)]
 #[command(
     name = "qatsi",
     version,
     author,
-    about = "Hierarchical deterministic passphrase generator using Argon2id",
-    before_help = get_logo()
+    about = "Stateless secret generation via hierarchical memory-hard key derivation using Argon2id",
+    help_template = "\
+{usage-heading} {usage}
+
+{all-args}{after-help}
+"
 )]
 struct Cli {
     #[arg(
@@ -67,6 +54,12 @@ struct Cli {
 
     #[arg(long, help = "Disable Unicode output")]
     no_unicode: bool,
+
+    #[arg(long, help = "Disable colored output")]
+    no_color: bool,
+
+    #[arg(short, long, help = "Suppress settings and statistics output")]
+    quiet: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
@@ -85,6 +78,12 @@ enum SecurityLevel {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    let color_support = if cli.no_color {
+        false
+    } else {
+        ui::detect_color_support()
+    };
 
     let unicode_support = if cli.no_unicode {
         false
@@ -151,7 +150,20 @@ fn main() -> Result<()> {
         }
     })?;
 
-    ui::display_output(&output, &info, &out_cfg, &kdf_cfg, elapsed, unicode_support);
+    let display_options = ui::DisplayOptions {
+        unicode_support,
+        color_support,
+        quiet: cli.quiet,
+    };
+
+    ui::display_output(
+        &output,
+        &info,
+        &out_cfg,
+        &kdf_cfg,
+        elapsed,
+        &display_options,
+    );
 
     Ok(())
 }

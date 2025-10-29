@@ -49,8 +49,18 @@ pub struct OutputConfig {
     pub is_mnemonic: bool,
 }
 
+pub struct DisplayOptions {
+    pub unicode_support: bool,
+    pub color_support: bool,
+    pub quiet: bool,
+}
+
 pub fn detect_unicode_support() -> bool {
     supports_unicode::on(supports_unicode::Stream::Stdout)
+}
+
+pub fn detect_color_support() -> bool {
+    supports_color::on(supports_color::Stream::Stdout).is_some()
 }
 
 pub fn get_status_symbols(unicode_support: bool) -> (&'static str, &'static str) {
@@ -236,27 +246,31 @@ pub fn display_output(
     config: &OutputConfig,
     kdf_config: &crate::kdf::Argon2Config,
     elapsed: Duration,
-    unicode_support: bool,
+    options: &DisplayOptions,
 ) {
-    let entropy = if config.is_mnemonic {
-        config.word_count as f64 * (config.wordlist_size as f64).log2()
+    if options.quiet {
+        println!("Out[0]:\n{}", &**output);
     } else {
-        config.password_length as f64 * (config.charset_size as f64).log2()
-    };
+        println!("Out[0]:\n{}\n", &**output);
 
-    println!("Out[0]:\n{}\n", &**output);
+        let entropy = if config.is_mnemonic {
+            config.word_count as f64 * (config.wordlist_size as f64).log2()
+        } else {
+            config.password_length as f64 * (config.charset_size as f64).log2()
+        };
 
-    display_settings(input_info, config, kdf_config, unicode_support);
-    display_stats(entropy, output.len(), config, elapsed, unicode_support);
+        display_settings(input_info, config, kdf_config, options);
+        display_stats(entropy, output.len(), config, elapsed, options);
+    }
 }
 
 fn display_settings(
     input_info: &InputInfo,
     config: &OutputConfig,
     kdf_config: &crate::kdf::Argon2Config,
-    unicode_support: bool,
+    options: &DisplayOptions,
 ) {
-    let (check_ok, check_warn) = get_status_symbols(unicode_support);
+    let (check_ok, check_warn) = get_status_symbols(options.unicode_support);
 
     let memory_mib = kdf_config.memory_mib();
 
@@ -281,20 +295,34 @@ fn display_settings(
     let master_bytes_secure = input_info.master_byte_length >= MIN_MASTER_BYTES;
     let layers_secure = input_info.layers.len() >= MIN_LAYERS_COUNT;
 
-    let kdf_style = if kdf_secure {
-        Style::new().green()
+    let kdf_style = if options.color_support {
+        if kdf_secure {
+            Style::new().green()
+        } else {
+            Style::new().yellow()
+        }
     } else {
-        Style::new().yellow()
+        Style::new()
     };
-    let master_bytes_style = if master_bytes_secure {
-        Style::new().green()
+
+    let master_bytes_style = if options.color_support {
+        if master_bytes_secure {
+            Style::new().green()
+        } else {
+            Style::new().yellow()
+        }
     } else {
-        Style::new().yellow()
+        Style::new()
     };
-    let layers_style = if layers_secure {
-        Style::new().green()
+
+    let layers_style = if options.color_support {
+        if layers_secure {
+            Style::new().green()
+        } else {
+            Style::new().yellow()
+        }
     } else {
-        Style::new().yellow()
+        Style::new()
     };
 
     let kdf_status = if kdf_secure { check_ok } else { check_warn };
@@ -352,10 +380,14 @@ fn display_settings(
         };
         let layer_bytes_secure = layer.byte_length >= MIN_LAYER_BYTES;
 
-        let layer_bytes_style = if layer_bytes_secure {
-            Style::new().green()
+        let layer_bytes_style = if options.color_support {
+            if layer_bytes_secure {
+                Style::new().green()
+            } else {
+                Style::new().yellow()
+            }
         } else {
-            Style::new().yellow()
+            Style::new()
         };
 
         let layer_status = if layer_bytes_secure {
@@ -417,16 +449,40 @@ fn display_stats(
     length: usize,
     config: &OutputConfig,
     elapsed: Duration,
-    unicode_support: bool,
+    options: &DisplayOptions,
 ) {
-    let (check_ok, check_warn) = get_status_symbols(unicode_support);
+    let (check_ok, check_warn) = get_status_symbols(options.unicode_support);
 
     let (status_icon, entropy_style, status_text) = if entropy >= PARANOID_ENTROPY {
-        (check_ok, Style::new().green(), "Paranoid")
+        (
+            check_ok,
+            if options.color_support {
+                Style::new().green()
+            } else {
+                Style::new()
+            },
+            "Paranoid",
+        )
     } else if entropy >= MIN_SAFE_ENTROPY {
-        (check_ok, Style::new().green(), "Strong")
+        (
+            check_ok,
+            if options.color_support {
+                Style::new().green()
+            } else {
+                Style::new()
+            },
+            "Strong",
+        )
     } else {
-        (check_warn, Style::new().yellow(), "Weak")
+        (
+            check_warn,
+            if options.color_support {
+                Style::new().yellow()
+            } else {
+                Style::new()
+            },
+            "Weak",
+        )
     };
 
     let length_secure = if config.is_mnemonic {
@@ -435,11 +491,16 @@ fn display_stats(
         config.password_length >= MIN_SAFE_PASSWORD_LENGTH
     };
 
-    let length_style = if length_secure {
-        Style::new().green()
+    let length_style = if options.color_support {
+        if length_secure {
+            Style::new().green()
+        } else {
+            Style::new().yellow()
+        }
     } else {
-        Style::new().yellow()
+        Style::new()
     };
+
     let length_status = if length_secure { check_ok } else { check_warn };
 
     println!("Stats:");
@@ -483,8 +544,8 @@ fn display_stats(
     println!("  └─ Time       {:.1}s", elapsed.as_secs_f64());
 
     println!(
-        "\n[{}] Security: {}",
-        entropy_style.apply_to(status_icon),
+        "\n{} Security: {}",
+        entropy_style.apply_to(format!("[{}]", status_icon)),
         entropy_style.apply_to(status_text)
     );
 }

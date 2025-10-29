@@ -1,6 +1,10 @@
 [package]
 name = "qatsi"
-version = "1.0.1"
+version = "1.1.0"
+authors = [
+    "René Coignard <contact@renecoignard.com>",
+    "Anton Rygin <anton.rygin@tu-dresden.de>"
+]
 edition = "2021"
 
 [dependencies]
@@ -14,7 +18,8 @@ clap = { version = "4.5.50", features = ["derive"] }
 console = "0.16.1"
 indicatif = "0.18.2"
 unicode-normalization = "0.1.24"
-supports-unicode = "3.0"
+supports-unicode = "3.0.0"
+supports-color = "3.0.2"
 
 [dev-dependencies]
 sha2 = "0.10.9"
