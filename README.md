@@ -1,5 +1,12 @@
 <img src="https://github.com/coignard/qatsi/blob/main/assets/logo.svg?raw=true" alt="Qatsi Logo" height="72">
 
+[![CI](https://github.com/coignard/qatsi/workflows/CI/badge.svg)](https://github.com/coignard/qatsi/actions)
+[![CodeQL](https://github.com/coignard/qatsi/workflows/CodeQL/badge.svg)](https://github.com/coignard/qatsi/security/code-scanning)
+[![Crates.io](https://img.shields.io/crates/v/qatsi.svg)](https://crates.io/crates/qatsi)
+[![Documentation](https://docs.rs/qatsi/badge.svg)](https://docs.rs/qatsi)
+[![License: GPL-3.0-or-later](https://img.shields.io/crates/l/qatsi.svg)](LICENSE)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/coignard)
+
 Stateless secret generation via hierarchical memory-hard key derivation using Argon2id. Generates cryptographically secure mnemonic or alphanumeric secrets without storing anything to disk.
 
 > [!CAUTION]
