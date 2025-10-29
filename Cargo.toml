@@ -1,6 +1,6 @@
 [package]
 name = "qatsi"
-version = "1.1.0"
+version = "1.1.1"
 authors = [
     "René Coignard <contact@renecoignard.com>",
     "Anton Rygin <anton.rygin@tu-dresden.de>"
@@ -14,6 +14,14 @@ readme = "README.md"
 keywords = ["argon2", "kdf", "cryptography", "security", "stateless"]
 categories = ["cryptography", "command-line-utilities"]
 exclude = [".github/*"]
+
+[lib]
+name = "qatsi"
+path = "src/lib.rs"
+
+[[bin]]
+name = "qatsi"
+path = "src/main.rs"
 
 [dependencies]
 argon2 = { version = "0.5.3", features = ["std"] }
