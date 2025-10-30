@@ -20,7 +20,7 @@ Stateless secret generation via hierarchical memory-hard key derivation using Ar
 cargo install qatsi
 ```
 
-Or build from source:
+Or build from source manually:
 
 ```bash
 git clone https://github.com/coignard/qatsi
