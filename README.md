@@ -109,24 +109,6 @@ Parameters:
 - $p$ — parallelism: 6
 - $\ell$ — output length: 32 bytes (256 bits)
 
-```
-K_0 ────┐
-        ├─── Argon2id(K_0, Salt(L_1), m, t, p) ──→ K_1
-L_1 ────┘
-
-K_1 ────┐
-        ├─── Argon2id(K_1, Salt(L_2), m, t, p) ──→ K_2
-L_2 ────┘
-
-    ⋮
-
-K_n-1 ──┐
-        ├─── Argon2id(K_n-1, Salt(L_n), m, t, p) ──→ K_n
-L_n ────┘
-
-K_n ──→ ChaCha20(K_n) ──→ Rejection sampling ──→ Output
-```
-
 ### Unbiased rejection sampling
 
 Rejection sampling eliminates modulo bias by rejecting values outside a uniform range.
