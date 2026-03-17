@@ -126,10 +126,12 @@ mod tests {
 
         let result = derive_hierarchical(master, &layers, Argon2Config::STANDARD);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Layers array cannot be empty"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Layers array cannot be empty")
+        );
     }
 
     #[test]

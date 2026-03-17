@@ -17,8 +17,8 @@
 
 use crate::wordlist::{get_wordlist, wordlist_size};
 use anyhow::Result;
-use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20::ChaCha20;
+use chacha20::cipher::{KeyIvInit, StreamCipher};
 use zeroize::Zeroizing;
 
 const ALPHABET: &[u8] =
