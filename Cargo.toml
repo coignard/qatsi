@@ -6,6 +6,7 @@ authors = [
     "Anton Rygin <anton.rygin@tu-dresden.de>"
 ]
 edition = "2024"
+rust-version = "1.90"
 license = "GPL-3.0-or-later"
 description = "Stateless secret generation via hierarchical memory-hard key derivation using Argon2id"
 homepage = "https://coignard.org/qatsi"
